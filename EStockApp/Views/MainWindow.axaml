@@ -1,31 +1,235 @@
-﻿<Window
+<Window
     x:Class="EStockApp.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
-    Title="EStockApp"
-    Width="800"
+    Title="电子器件记录管理"
+    Width="1200"
     Height="600"
+    MinWidth="800"
     d:DesignHeight="450"
     d:DesignWidth="800"
+    x:CompileBindings="True"
     x:DataType="vm:MainWindowViewModel"
-    Icon="/Assets/avalonia-logo.ico"
+    Icon="/Assets/logo.png"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
 
     <Design.DataContext>
-        <!--
-        This only sets the DataContext for the previewer in an IDE,
-        to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs)
-        -->
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <TextBlock
-        HorizontalAlignment="Center"
-        VerticalAlignment="Center"
-        Text="{Binding Greeting}" />
+    <Grid RowDefinitions="auto,*,auto">
+
+        <Grid Margin="10" ColumnDefinitions="*,auto">
+            <Grid>
+                <StackPanel
+                    IsEnabled="{Binding !IsBusy}"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <TextBlock VerticalAlignment="Center">搜索</TextBlock>
+                    <ComboBox
+                        Width="150"
+                        ItemsSource="{Binding CategoryList}"
+                        MaxDropDownHeight="350"
+                        SelectedIndex="0"
+                        SelectedValue="{Binding SelectCategory, Mode=TwoWay}" />
+                    <TextBox
+                        MinWidth="200"
+                        MaxWidth="500"
+                        Margin="0"
+                        Classes="clearButton"
+                        Text="{Binding ListFilter, Mode=TwoWay}"
+                        Watermark="输入关键词">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button
+                        Command="{Binding SearchCommand}"
+                        Content="搜索"
+                        Theme="{DynamicResource SolidButton}" />
+                </StackPanel>
+            </Grid>
+            <Grid Grid.Column="1">
+                <StackPanel
+                    IsEnabled="{Binding !IsBusy}"
+                    Orientation="Horizontal"
+                    Spacing="4">
+                    <Button
+                        Classes="Tertiary"
+                        Command="{Binding ShowSyncViewCommand}"
+                        Content="同步"
+                        Theme="{DynamicResource SolidButton}" />
+                    <Button
+                        Classes="Secondary"
+                        Command="{Binding BackupDbCommand}"
+                        Content="备份"
+                        Theme="{DynamicResource SolidButton}" />
+                    <Button
+                        Classes="Success"
+                        Command="{Binding AddCommand}"
+                        Content="新增"
+                        Theme="{DynamicResource SolidButton}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <DataGrid
+                x:Name="myDataGrid"
+                BorderThickness="1"
+                CanUserResizeColumns="True"
+                IsReadOnly="True"
+                ItemsSource="{Binding Items, Mode=OneWay}"
+                SelectionMode="Single">
+                <DataGrid.Columns>
+
+                    <DataGridTemplateColumn
+                        Width="150"
+                        Header="类别"
+                        SortMemberPath="Category">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <SelectableTextBlock
+                                    Padding="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding Category}">
+                                    <ToolTip.Tip>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Category}" />
+                                        </StackPanel>
+                                    </ToolTip.Tip>
+                                </SelectableTextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn
+                        Width="*"
+                        MinWidth="200"
+                        Header="参数"
+                        SortMemberPath="ProductName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <SelectableTextBlock
+                                    Padding="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding ProductName}">
+                                    <ToolTip.Tip>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding ProductName}" />
+                                        </StackPanel>
+                                    </ToolTip.Tip>
+                                </SelectableTextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn
+                        Width="130"
+                        Binding="{Binding Pack}"
+                        Header="封装" />
+
+                    <DataGridTextColumn
+                        Width="150"
+                        Binding="{Binding BrandName}"
+                        Header="品牌" />
+
+                    <DataGridTemplateColumn
+                        Width="120"
+                        Header="编号"
+                        SortMemberPath="ProductCode">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <SelectableTextBlock
+                                    Padding="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding ProductCode}">
+                                    <ToolTip.Tip>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding ProductCode}" />
+                                        </StackPanel>
+                                    </ToolTip.Tip>
+                                </SelectableTextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+
+                    <DataGridTemplateColumn
+                        Width="100"
+                        Header="数量"
+                        SortMemberPath="StockCount">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
+                                    <TextBlock Text="{Binding StockCount}" />
+                                    <TextBlock Text="/" />
+                                    <TextBlock Text="{Binding TotalCount}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Width="130" Header="操作">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel
+                                    HorizontalAlignment="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="2">
+                                    <Button
+                                        Classes="Small Secondary"
+                                        Command="{Binding #myDataGrid.((vm:MainWindowViewModel)DataContext).UpdateStockCommand}"
+                                        CommandParameter="{Binding Id}">
+                                        库存
+                                    </Button>
+                                    <SplitButton
+                                        Classes="Small Secondary"
+                                        Command="{Binding #myDataGrid.((vm:MainWindowViewModel)DataContext).EditCommand}"
+                                        CommandParameter="{Binding Id}"
+                                        Content="编辑">
+                                        <SplitButton.Flyout>
+                                            <MenuFlyout Placement="Bottom">
+                                                <MenuItem
+                                                    Command="{Binding #myDataGrid.((vm:MainWindowViewModel)DataContext).ShowOrderNoCommand}"
+                                                    CommandParameter="{Binding Id}"
+                                                    Header="相关订单" />
+                                                <Separator />
+                                                <MenuItem
+                                                    Command="{Binding #myDataGrid.((vm:MainWindowViewModel)DataContext).OpenUrlCommand}"
+                                                    CommandParameter="{Binding Id}"
+                                                    Header="打开详细页" />
+                                                <Separator />
+                                                <MenuItem
+                                                    Command="{Binding #myDataGrid.((vm:MainWindowViewModel)DataContext).DeleteCommand}"
+                                                    CommandParameter="{Binding Id}"
+                                                    Header="删除" />
+                                            </MenuFlyout>
+                                        </SplitButton.Flyout>
+                                    </SplitButton>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="10,4">
+            <StackPanel Orientation="Horizontal" Spacing="0">
+                <TextBlock Text="合计种类：" />
+                <TextBlock Text="{Binding TotalCount}" />
+            </StackPanel>
+        </Grid>
+
+    </Grid>
 
 </Window>

@@ -1,0 +1,122 @@
+<UserControl
+    x:Class="EStockApp.ProductEditView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:EStockApp.ViewModels"
+    Width="350"
+    Height="400"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:ProductEditViewModel"
+    mc:Ignorable="d">
+
+    <Design.DataContext>
+        <vm:ProductEditViewModel />
+    </Design.DataContext>
+
+    <Grid Margin="10">
+        <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="ID" />
+                <NumericUpDown
+                    Grid.Column="1"
+                    FormatString="0"
+                    Maximum="99999999"
+                    Minimum="0"
+                    Value="{Binding EditItem.ProductId, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="类别" />
+                <ComboBox
+                    Grid.Column="1"
+                    AutoScrollToSelectedItem="True"
+                    ItemsSource="{Binding CategoryList}"
+                    SelectedIndex="0"
+                    SelectedItem="{Binding EditItem.Category, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="参数" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.ProductName, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="封装" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.Pack, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="品牌" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.BrandName, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="编号" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.ProductCode, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="总数量" />
+                <NumericUpDown
+                    Grid.Column="1"
+                    FormatString="0"
+                    Maximum="99999999"
+                    Minimum="0"
+                    Value="{Binding EditItem.TotalCount, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="库存" />
+                <NumericUpDown
+                    Grid.Column="1"
+                    FormatString="0"
+                    Maximum="99999999"
+                    Minimum="0"
+                    Value="{Binding EditItem.StockCount, Mode=TwoWay}" />
+            </Grid>
+
+            <StackPanel
+                HorizontalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <Button Command="{Binding SaveCommand}" Theme="{DynamicResource SolidButton}">保存</Button>
+            </StackPanel>
+
+        </StackPanel>
+    </Grid>
+</UserControl>
