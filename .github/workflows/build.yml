@@ -1,0 +1,60 @@
+name: Build
+
+on:
+  push:
+    branches: ["main"]
+    tags:
+      - "v*"
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    env:
+      Solution_Name: EStockApp.sln
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c release
+
+      - name: Publish - self contained
+        run: |
+          dotnet publish -c Release -r win-x86 --self-contained -o ./publish ./EStockApp/EStockApp.csproj
+          Compress-Archive ./publish/* estockapp.zip
+
+      - name: Publish - framework-dependent
+        run: |
+          dotnet publish -c Release -r win-x86 -o ./publish ./EStockApp/EStockApp.csproj
+          Compress-Archive ./publish/* estockapp-dependent.zip
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            estockapp.zip
+            estockapp-dependent.zip
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: ${{github.ref_name}}
+          allowUpdates: true
+          generateReleaseNotes: true
+          artifacts: "estockapp.zip,estockapp-dependent.zip"
