@@ -10,6 +10,8 @@ public interface IDataStore
 
     Task<int> GetCountAsync(string? category = null, string? filter = null);
 
+    Task<int> GetStockCountAsync(string? category = null, string? filter = null);
+
     Task<bool> IncreaseStockAsync(int id, int value);
     Task<bool> SetStockAsync(int id, int value);
 

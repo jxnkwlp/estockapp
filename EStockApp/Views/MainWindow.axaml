@@ -2,11 +2,12 @@
     x:Class="EStockApp.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ct="clr-namespace:EStockApp.Controls;assembly=EStockApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
-    Title="电子器件记录管理"
+    Title="电子器件库存记录管理 v1.0"
     Width="1200"
     Height="600"
     MinWidth="800"
@@ -30,7 +31,7 @@
                     IsEnabled="{Binding !IsBusy}"
                     Orientation="Horizontal"
                     Spacing="10">
-                    <TextBlock VerticalAlignment="Center">搜索</TextBlock>
+                    <!--<TextBlock VerticalAlignment="Center">搜索</TextBlock>-->
                     <ComboBox
                         Width="150"
                         ItemsSource="{Binding CategoryList}"
@@ -88,77 +89,39 @@
                 SelectionMode="Single">
                 <DataGrid.Columns>
 
-                    <DataGridTemplateColumn
+                    <ct:DataGridTextSelectableColumn
                         Width="150"
-                        Header="类别"
-                        SortMemberPath="Category">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <SelectableTextBlock
-                                    Padding="10,0"
-                                    VerticalAlignment="Center"
-                                    Text="{Binding Category}">
-                                    <ToolTip.Tip>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Category}" />
-                                        </StackPanel>
-                                    </ToolTip.Tip>
-                                </SelectableTextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+                        Binding="{Binding Category}"
+                        Header="类目"
+                        SortMemberPath="Category" />
 
-                    <DataGridTemplateColumn
+                    <ct:DataGridTextSelectableColumn
                         Width="*"
                         MinWidth="200"
-                        Header="参数"
-                        SortMemberPath="ProductName">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <SelectableTextBlock
-                                    Padding="10,0"
-                                    VerticalAlignment="Center"
-                                    Text="{Binding ProductName}">
-                                    <ToolTip.Tip>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding ProductName}" />
-                                        </StackPanel>
-                                    </ToolTip.Tip>
-                                </SelectableTextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+                        Binding="{Binding ProductName}"
+                        Header="名称"
+                        SortMemberPath="ProductName" />
 
-                    <DataGridTextColumn
-                        Width="130"
+                    <ct:DataGridTextSelectableColumn
+                        Width="150"
+                        Binding="{Binding ProductModel}"
+                        Header="型号" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="150"
                         Binding="{Binding Pack}"
                         Header="封装" />
 
-                    <DataGridTextColumn
+                    <ct:DataGridTextSelectableColumn
                         Width="150"
                         Binding="{Binding BrandName}"
                         Header="品牌" />
 
-                    <DataGridTemplateColumn
+                    <ct:DataGridTextSelectableColumn
                         Width="120"
+                        Binding="{Binding ProductCode}"
                         Header="编号"
-                        SortMemberPath="ProductCode">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <SelectableTextBlock
-                                    Padding="10,0"
-                                    VerticalAlignment="Center"
-                                    Text="{Binding ProductCode}">
-                                    <ToolTip.Tip>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding ProductCode}" />
-                                        </StackPanel>
-                                    </ToolTip.Tip>
-                                </SelectableTextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
+                        SortMemberPath="ProductCode" />
 
                     <DataGridTemplateColumn
                         Width="100"
@@ -224,9 +187,9 @@
         </Grid>
 
         <Grid Grid.Row="2" Margin="10,4">
-            <StackPanel Orientation="Horizontal" Spacing="0">
-                <TextBlock Text="合计种类：" />
-                <TextBlock Text="{Binding TotalCount}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="{Binding TotalCount, StringFormat='合计种类：{0}'}" />
+                <TextBlock Text="{Binding TotalStockCount, StringFormat='合计库存：{0}'}" />
             </StackPanel>
         </Grid>
 

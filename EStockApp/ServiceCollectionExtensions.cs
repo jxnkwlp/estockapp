@@ -22,7 +22,12 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ProductEditViewModel>();
         services.AddTransient<StockEditViewModel>();
 
-        services.AddSingleton<IDataStore, LocalDataStore>();
+        services.AddSingleton<IDataStore>((s) =>
+        {
+            var instance = new LocalDataStore();
+            instance.Initial();
+            return instance;
+        });
 
         services.AddSingleton<WindowNotificationManager>((s) => new WindowNotificationManager(TopLevel.GetTopLevel(s.GetRequiredService<MainWindow>())) { MaxItems = 3 });
         services.AddSingleton<TopLevel>((s) => TopLevel.GetTopLevel(s.GetRequiredService<MainWindow>())!);

@@ -36,6 +36,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _totalCount;
+    [ObservableProperty]
+    private int _totalStockCount;
 
     private readonly IDataStore _dataStore;
     private readonly WindowNotificationManager _notificationManager;
@@ -84,6 +86,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             TotalCount = await _dataStore.GetCountAsync();
+            TotalStockCount = await _dataStore.GetStockCountAsync();
 
             var list = await _dataStore.GetListAsync(int.MaxValue, 0, SelectCategory == "全部" ? null : SelectCategory, ListFilter);
             Items.Clear();
