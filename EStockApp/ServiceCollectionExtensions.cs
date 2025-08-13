@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
+using EStockApp.Data;
 using EStockApp.Models;
 using EStockApp.Services;
+using EStockApp.Services.OrderSync;
 using EStockApp.ViewModels;
 using EStockApp.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,12 +17,16 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<MainWindow>();
         services.AddTransient<SyncWindow>();
+        services.AddTransient<OrderListView>();
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<SyncWindowViewModel>();
 
         services.AddTransient<ProductEditViewModel>();
         services.AddTransient<StockEditViewModel>();
+        services.AddTransient<OrderListViewModel>();
+
+        services.AddSingleton<IOrderHistorySync, BrowserOrderHistorySync>();
 
         services.AddSingleton<IDataStore>((s) =>
         {
@@ -32,7 +38,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<WindowNotificationManager>((s) => new WindowNotificationManager(TopLevel.GetTopLevel(s.GetRequiredService<MainWindow>())) { MaxItems = 3 });
         services.AddSingleton<TopLevel>((s) => TopLevel.GetTopLevel(s.GetRequiredService<MainWindow>())!);
 
-        TinyMapper.Bind<ProductItemModel, ItemEditViewModel>();
-        TinyMapper.Bind<ItemEditViewModel, ProductItemModel>();
+        TinyMapper.Bind<Product, ProductItemModel>();
+        TinyMapper.Bind<Product, ItemEditViewModel>();
+        TinyMapper.Bind<ItemEditViewModel, Product>();
     }
 }

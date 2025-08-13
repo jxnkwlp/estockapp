@@ -20,11 +20,16 @@ public partial class SyncWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ObservableCollection<string> _logs = new ObservableCollection<string>();
 
-    private readonly IDataStore _dataStore;
+    [ObservableProperty]
+    private bool _loadFromOrder = true;
 
-    public SyncWindowViewModel(IDataStore dataStore)
+    private readonly IDataStore _dataStore;
+    private readonly IOrderHistorySync _orderHistorySync;
+
+    public SyncWindowViewModel(IDataStore dataStore, IOrderHistorySync orderHistorySync)
     {
         _dataStore = dataStore;
+        _orderHistorySync = orderHistorySync;
     }
 
     [RelayCommand(CanExecute = nameof(CanStart), AllowConcurrentExecutions = false)]
@@ -37,56 +42,123 @@ public partial class SyncWindowViewModel : ViewModelBase
 
         AddLogs("正在启动...");
 
-        var result = OrderHistorySync.RunAsync(DateOnly.FromDateTime(StartDate.Value.Date));
-
-        bool needLogin = false;
-
-        await foreach (OrderHistorySyncResult item in result)
+        try
         {
-            if (!string.IsNullOrWhiteSpace(item.Message))
-                AddLogs(item.Message);
-
-            if (item.Status == OrderHistorySyncStatus.RequreLogin)
+            if (LoadFromOrder)
             {
-                needLogin = true;
+                int count = 0;
+                var result = _orderHistorySync.GetOrderListAsync(DateOnly.FromDateTime(StartDate.Value.Date));
 
-                break;
+                await foreach (var item in result)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.Message))
+                        AddLogs(item.Message);
+
+                    if (item.Status == SyncStatus.Success && item.Result != null)
+                    {
+                        await AddOrUpdateOrderItemAsync(item.Result);
+                        count++;
+                    }
+                }
+
+                AddLogs($"已更新 {count} 个订单");
             }
-            else if (item.Status == OrderHistorySyncStatus.Success && item.OrderItem != null)
+            else
             {
-                await AddOrUpdateOrderItem(item.OrderItem);
+                var result = _orderHistorySync.GetHistoriesAsync(DateOnly.FromDateTime(StartDate.Value.Date));
+                int count = 0;
+
+                await foreach (var item in result)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.Message))
+                        AddLogs(item.Message);
+
+                    if (item.Status == SyncStatus.Success && item.Result != null)
+                    {
+                        await AddOrUpdateOrderProductAsync(item.Result);
+                        count++;
+                    }
+                }
+
+                AddLogs($"已更新 {count} 个器件");
             }
+
+            AddLogs("同步完成！");
         }
-
-        if (needLogin)
+        catch (Exception ex)
         {
-            AddLogs("正在打开登录窗口...");
-
-            try
-            {
-                await OrderHistorySync.ShowLoginAsync();
-                AddLogs("已登录");
-
-                await StartAsync();
-            }
-            catch (Exception ex)
-            {
-                AddLogs($"错误：{ex.Message}");
-            }
+            AddLogs(ex.Message);
         }
 
         IsBusy = false;
     }
 
-    private async Task AddOrUpdateOrderItem(SyncOrderItemModel item)
+    private async Task AddOrUpdateOrderItemAsync(OrderInfoSyncModel orderInfo)
+    {
+        await _dataStore.AddOrUpdateOrderAsync(new Data.Order
+        {
+            OrderId = orderInfo.OrderId,
+            OrderNo = orderInfo.OrderNo,
+            OrderTime = orderInfo.OrderTime,
+            RealPrice = orderInfo.RealPrice,
+            TotalDiscount = orderInfo.TotalDiscount,
+            TotalPrice = orderInfo.TotalPrice,
+            ItemsCount = orderInfo.ItemsCount, 
+        });
+
+        AddLogs($"已添加订单 {orderInfo.OrderNo}");
+
+        foreach (var item in orderInfo.Products)
+        {
+            if (!await _dataStore.IsExistsAsync(item.ProductId))
+            {
+                await _dataStore.InsertAsync(new Data.Product()
+                {
+                    OrderCodes = new[] { item.OrderNumber },
+                    ProductId = item.ProductId,
+                    BrandName = item.BrandName,
+                    Category = item.Category,
+                    Pack = item.Pack,
+                    ProductCode = item.ProductCode,
+                    ProductModel = item.ProductModel,
+                    ProductName = item.ProductName,
+                    TotalCount = item.TotalCount,
+                    StockCount = item.TotalCount,
+                    TotalPrice = item.TotalPrice,
+                    StockUnitName = item.StockUnitName,
+                    UnitPrice = item.Price,
+                });
+            }
+            else
+            {
+                await _dataStore.AddOrUpdateAsync(item.ProductId, item.OrderNumber, new Data.Product()
+                {
+                    ProductId = item.ProductId,
+                    BrandName = item.BrandName,
+                    Category = item.Category,
+                    Pack = item.Pack,
+                    ProductCode = item.ProductCode,
+                    ProductModel = item.ProductModel,
+                    ProductName = item.ProductName,
+                    TotalCount = item.TotalCount,
+                    StockCount = item.TotalCount,
+                    TotalPrice = item.TotalPrice,
+                    StockUnitName = item.StockUnitName,
+                    UnitPrice = item.Price,
+                });
+            }
+        }
+    }
+
+    private async Task AddOrUpdateOrderProductAsync(OrderProductItemSyncModel item)
     {
         if (!await _dataStore.IsExistsAsync(item.ProductId))
         {
-            await _dataStore.InsertAsync(new ProductItemModel()
+            await _dataStore.InsertAsync(new Data.Product()
             {
+                OrderCodes = new[] { item.OrderNumber },
                 ProductId = item.ProductId,
                 BrandName = item.BrandName,
-                OrderCodes = item.OrderCodes,
                 Category = item.Category,
                 Pack = item.Pack,
                 ProductCode = item.ProductCode,
@@ -94,24 +166,51 @@ public partial class SyncWindowViewModel : ViewModelBase
                 ProductName = item.ProductName,
                 TotalCount = item.TotalCount,
                 StockCount = item.TotalCount,
+                TotalPrice = item.TotalPrice,
+                StockUnitName = item.StockUnitName,
+                UnitPrice = item.Price,
             });
         }
         else
         {
-            await _dataStore.AddOrUpdateAsync(item.ProductId, new ProductItemModel()
+            await _dataStore.AddOrUpdateAsync(item.ProductId, item.OrderNumber, new Data.Product()
             {
+                ProductId = item.ProductId,
                 BrandName = item.BrandName,
-                OrderCodes = item.OrderCodes,
                 Category = item.Category,
                 Pack = item.Pack,
                 ProductCode = item.ProductCode,
                 ProductModel = item.ProductModel,
                 ProductName = item.ProductName,
                 TotalCount = item.TotalCount,
+                StockCount = item.TotalCount,
+                TotalPrice = item.TotalPrice,
+                StockUnitName = item.StockUnitName,
+                UnitPrice = item.Price,
             });
         }
 
         AddLogs($"已同步 {item.Category} {item.ProductName}");
+
+        var orderId = item.OrderId;
+        if (!await _dataStore.OrderExistsAsync(orderId))
+        {
+            var orderInfo = await _orderHistorySync.GetOrderAsync(orderId);
+            if (orderInfo == null)
+                return;
+
+            await _dataStore.AddOrUpdateOrderAsync(new Data.Order
+            {
+                OrderId = orderId,
+                OrderNo = orderInfo.OrderNo,
+                OrderTime = orderInfo.OrderTime,
+                RealPrice = orderInfo.RealPrice,
+                TotalDiscount = orderInfo.TotalDiscount,
+                TotalPrice = orderInfo.TotalPrice,
+            });
+
+            AddLogs($"已同步订单 {orderInfo.OrderNo}");
+        }
     }
 
     private bool CanStart()

@@ -38,7 +38,7 @@ public class DataGridTextSelectableColumn : DataGridTextColumn
 
         if (CellTheme is { } theme)
         {
-            root.Theme = theme; 
+            root.Theme = theme;
         }
 
         return root;

@@ -38,7 +38,7 @@ public class App : Application
             var window = services.GetRequiredService<MainWindow>();
             var vm = services.GetRequiredService<MainWindowViewModel>();
             window.DataContext = vm;
-            vm.Initial();
+            vm.InitialAsync().ConfigureAwait(false);
 
             desktop.MainWindow = window;
         }

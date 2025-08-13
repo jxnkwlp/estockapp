@@ -8,9 +8,12 @@ using EStockApp.Views;
 using Microsoft.Extensions.DependencyInjection;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
+using Nelibur.ObjectMapper;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Notification = Avalonia.Controls.Notifications.Notification;
 using WindowNotificationManager = Avalonia.Controls.Notifications.WindowNotificationManager;
@@ -48,10 +51,10 @@ public partial class MainWindowViewModel : ViewModelBase
         _notificationManager = notificationManager;
     }
 
-    public override void Initial()
+    public override async Task InitialAsync(Dictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
     {
-        _ = LoadCategory();
-        _ = LoadList();
+        await LoadCategory();
+        await LoadList();
     }
 
     [RelayCommand]
@@ -90,7 +93,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var list = await _dataStore.GetListAsync(int.MaxValue, 0, SelectCategory == "全部" ? null : SelectCategory, ListFilter);
             Items.Clear();
-            Items = new ObservableCollection<ProductItemModel>(list);
+            Items = new ObservableCollection<ProductItemModel>(list.Select(x => TinyMapper.Map<ProductItemModel>(x)));
         }
         catch (System.Exception ex)
         {
@@ -115,7 +118,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var vm = App.ServiceProvider.GetRequiredService<StockEditViewModel>();
 
-        vm.Initial();
+        vm.InitialAsync();
         vm.SetId(id);
 
         await DialogHost.ShowDialogAsync(new StockEditView(), vm, new DialogOptions()
@@ -132,7 +135,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var vm = App.ServiceProvider.GetRequiredService<ProductEditViewModel>();
 
-        vm.Initial();
+        vm.InitialAsync();
 
         await DialogHost.ShowDialogAsync(new ProductEditView(), vm, new DialogOptions()
         {
@@ -153,7 +156,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        vm.Initial();
+        vm.InitialAsync();
 
         await DialogHost.ShowDialogAsync(new ProductEditView(), vm, new DialogOptions()
         {
@@ -239,4 +242,21 @@ public partial class MainWindowViewModel : ViewModelBase
             IsBusy = false;
         }
     }
+
+    [RelayCommand]
+    private async Task ShowOrderListAsync(int? fromProductId = 0)
+    {
+        var vm = App.ServiceProvider.GetRequiredService<OrderListViewModel>();
+
+        vm.InitialAsync(new Dictionary<string, object?> { { "fromProductId", fromProductId } });
+
+        await DialogHost.ShowDialogAsync(new OrderListView(), vm, new DialogOptions()
+        {
+            Title = "订单列表",
+            CanResize = false,
+        });
+
+        await LoadList();
+    }
+
 }

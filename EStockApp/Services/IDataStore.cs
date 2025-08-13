@@ -1,4 +1,4 @@
-using EStockApp.Models;
+using EStockApp.Data;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -6,7 +6,7 @@ namespace EStockApp.Services;
 
 public interface IDataStore
 {
-    Task<List<ProductItemModel>> GetListAsync(int maxResultCount, int skipCount, string? category = null, string? filter = null);
+    Task<List<Product>> GetListAsync(int maxResultCount, int skipCount, string? category = null, string? filter = null);
 
     Task<int> GetCountAsync(string? category = null, string? filter = null);
 
@@ -17,14 +17,19 @@ public interface IDataStore
 
     Task<bool> IsExistsAsync(int productId);
 
-    Task<int> InsertAsync(ProductItemModel item);
-    Task<bool> UpdateAsync(ProductItemModel item);
+    Task<int> InsertAsync(Product item);
+    Task<bool> UpdateAsync(Product item);
     Task DeleteAsync(int id);
 
-    Task<ProductItemModel?> GetAsync(int id);
+    Task<Product?> GetAsync(int id);
 
-    Task AddOrUpdateAsync(int productId, ProductItemModel item);
+    Task AddOrUpdateAsync(int productId, string orderCode, Product item);
+
+    Task BackupAsync();
 
     Task<IReadOnlyList<string>> GetCategoryListAsync();
-    Task BackupAsync();
+
+    Task<bool> OrderExistsAsync(string orderId);
+    Task AddOrUpdateOrderAsync(Order order);
+    Task<List<Order>> GetOrderListAsync();
 }

@@ -1,11 +1,13 @@
 using Avalonia.Controls.Notifications;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EStockApp.Models;
+using EStockApp.Data;
 using EStockApp.Services;
 using Nelibur.ObjectMapper;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EStockApp.ViewModels;
@@ -29,9 +31,9 @@ public partial class ProductEditViewModel : DialogViewModelBase
         _notificationManager = notificationManager;
     }
 
-    public override void Initial()
+    public override async Task InitialAsync(Dictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
     {
-        _ = LoadCategory();
+        await LoadCategory();
     }
 
     public async Task<bool> LoadAsync(int id)
@@ -71,13 +73,13 @@ public partial class ProductEditViewModel : DialogViewModelBase
         if (_id.HasValue)
         {
             // 
-            var newItem = TinyMapper.Map<ProductItemModel>(EditItem);
+            var newItem = TinyMapper.Map<Product>(EditItem);
             newItem.Id = _id.Value;
             await _dataStore.UpdateAsync(newItem);
         }
         else
         {
-            await _dataStore.InsertAsync(TinyMapper.Map<ProductItemModel>(EditItem));
+            await _dataStore.InsertAsync(TinyMapper.Map<Product>(EditItem));
         }
 
         _notificationManager.Show(new Notification("提示", "保存成功", NotificationType.Success));

@@ -1,6 +1,6 @@
-namespace EStockApp.Models;
+namespace EStockApp.Data;
 
-public class ProductItemModel
+public class Product
 {
     public int Id { get; set; }
 

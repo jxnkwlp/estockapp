@@ -1,0 +1,85 @@
+<UserControl
+    x:Class="EStockApp.Views.OrderListView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ct="clr-namespace:EStockApp.Controls;assembly=EStockApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:EStockApp.ViewModels"
+    Width="650"
+    Height="450"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:OrderListViewModel"
+    mc:Ignorable="d">
+    <Design.DataContext>
+        <vm:OrderListViewModel />
+    </Design.DataContext>
+
+    <Grid Margin="10" RowDefinitions="auto,*">
+        <Grid Grid.Row="0">
+            <StackPanel
+                IsEnabled="{Binding !IsBusy}"
+                Orientation="Horizontal"
+                Spacing="10">
+                <TextBox
+                    MinWidth="200"
+                    MaxWidth="500"
+                    Margin="0"
+                    Classes="clearButton"
+                    Text="{Binding Filter, Mode=TwoWay}"
+                    Watermark="输入订单编号">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <Button
+                    Command="{Binding SearchCommand}"
+                    Content="搜索"
+                    Theme="{DynamicResource SolidButton}" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <DataGrid
+                x:Name="myDataGrid"
+                BorderThickness="1"
+                CanUserResizeColumns="True"
+                IsReadOnly="True"
+                ItemsSource="{Binding Orders, Mode=OneWay}"
+                SelectionMode="Single">
+                <DataGrid.Columns>
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="150"
+                        Binding="{Binding OrderNo}"
+                        Header="编号"
+                        SortMemberPath="OrderNo" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="150"
+                        Binding="{Binding RealPrice}"
+                        Header="金额"
+                        SortMemberPath="RealPrice" />
+
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="150"
+                        Binding="{Binding ItemsCount}"
+                        Header="项数"
+                        SortMemberPath="ItemsCount" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="150"
+                        Binding="{Binding OrderTime}"
+                        Header="时间"
+                        SortMemberPath="OrderTime" />
+
+
+                </DataGrid.Columns>
+            </DataGrid>
+
+        </Grid>
+    </Grid>
+
+
+</UserControl>
