@@ -349,6 +349,10 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         foreach (var item in orderList)
         {
+            // 只处理已发货
+            if (item.OrderStatus != "already_send")
+                continue;
+
             await Task.Delay(500);
 
             var orderInfo = await GetOrderAsync(page, item.Uuid, true);
@@ -437,6 +441,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
     public class OrderListItem
     {
         public string Uuid { get; set; } = null!;
+        public string OrderStatus { get; set; } = null!;
     }
 
     public class CustomDateTimeConverter : JsonConverter<DateTime>
