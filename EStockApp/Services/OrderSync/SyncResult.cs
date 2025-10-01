@@ -2,25 +2,34 @@ namespace EStockApp.Services.OrderSync;
 
 public class SyncResult
 {
-    public SyncResult(SyncStatus status, string? message = null)
+    public SyncResult()
     {
-        Status = status;
-        Message = message;
+        Success = true;
     }
 
-    public SyncStatus Status { get; } = SyncStatus.Success;
-    public string? Message { get; }
+    public SyncResult(string error)
+    {
+        Success = false;
+        Error = error;
+    }
+
+    public bool Success { get; }
+    public string? Error { get; }
 }
 
 public class SyncResult<TResult> : SyncResult
 {
-    public SyncResult(TResult result, string? message = null) : base(SyncStatus.Success, message)
+    public SyncResult()
     {
-        Result = result;
     }
 
-    public SyncResult(SyncStatus status, string? message = null) : base(status, message)
+    public SyncResult(string error) : base(error)
     {
+    }
+
+    public SyncResult(TResult result) : base()
+    {
+        Result = result;
     }
 
     public TResult? Result { get; }

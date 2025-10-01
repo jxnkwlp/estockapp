@@ -5,10 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
-    Width="350"
-    Height="400"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    Width="380"
     x:DataType="vm:ProductEditViewModel"
     mc:Ignorable="d">
 
@@ -18,26 +15,12 @@
 
     <Grid Margin="10">
         <StackPanel Spacing="10">
-            <Grid ColumnDefinitions="60,*">
+            <Grid ColumnDefinitions="80,*">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
-                    Content="ID" />
-                <NumericUpDown
-                    Grid.Column="1"
-                    FormatString="0"
-                    Maximum="99999999"
-                    Minimum="0"
-                    Value="{Binding EditItem.ProductId, Mode=TwoWay}" />
-            </Grid>
-
-            <Grid ColumnDefinitions="60,*">
-                <Label
-                    Margin="0,0,10,0"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Content="类别" />
+                    Content="类目" />
                 <ComboBox
                     Grid.Column="1"
                     AutoScrollToSelectedItem="True"
@@ -46,16 +29,39 @@
                     SelectedItem="{Binding EditItem.Category, Mode=TwoWay}" />
             </Grid>
 
-            <Grid ColumnDefinitions="60,*">
+            <Grid ColumnDefinitions="80,*">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
-                    Content="参数" />
+                    Content="产品ID" />
+                <NumericUpDown
+                    Grid.Column="1"
+                    FormatString="0"
+                    Maximum="99999999"
+                    Minimum="0"
+                    Value="{Binding EditItem.ProductId, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="80,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="名称" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.ProductModel, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="80,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="型号" />
                 <TextBox Grid.Column="1" Text="{Binding EditItem.ProductName, Mode=TwoWay}" />
             </Grid>
 
-            <Grid ColumnDefinitions="60,*">
+            <Grid ColumnDefinitions="80,*">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
@@ -64,7 +70,7 @@
                 <TextBox Grid.Column="1" Text="{Binding EditItem.Pack, Mode=TwoWay}" />
             </Grid>
 
-            <Grid ColumnDefinitions="60,*">
+            <Grid ColumnDefinitions="80,*">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
@@ -73,7 +79,7 @@
                 <TextBox Grid.Column="1" Text="{Binding EditItem.BrandName, Mode=TwoWay}" />
             </Grid>
 
-            <Grid ColumnDefinitions="60,*">
+            <Grid ColumnDefinitions="80,*">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
@@ -82,7 +88,44 @@
                 <TextBox Grid.Column="1" Text="{Binding EditItem.ProductCode, Mode=TwoWay}" />
             </Grid>
 
-            <Grid ColumnDefinitions="60,*">
+            <Grid ColumnDefinitions="80,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="单位" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.StockUnitName, Mode=TwoWay}" />
+            </Grid>
+
+
+            <Grid ColumnDefinitions="80,*" IsVisible="{Binding EditItem.IsAdd}">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="关联订单号" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.OrderNo, Mode=TwoWay}" />
+            </Grid>
+            <Grid ColumnDefinitions="80,*" IsVisible="{Binding EditItem.IsAdd}">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="订单金额" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.TotalPrice, Mode=TwoWay}" />
+            </Grid>
+
+
+            <Grid ColumnDefinitions="80,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="单价" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.UnitPrice, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="80,*">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
@@ -96,7 +139,7 @@
                     Value="{Binding EditItem.TotalCount, Mode=TwoWay}" />
             </Grid>
 
-            <Grid ColumnDefinitions="60,*">
+            <Grid ColumnDefinitions="80,*">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using EStockApp.Data;
 using EStockApp.Services;
 using Nelibur.ObjectMapper;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -15,6 +16,8 @@ namespace EStockApp.ViewModels;
 public partial class ProductEditViewModel : DialogViewModelBase
 {
     private int? _id;
+
+    private Product? _product;
 
     [ObservableProperty]
     private ItemEditViewModel _editItem = new ItemEditViewModel();
@@ -29,6 +32,8 @@ public partial class ProductEditViewModel : DialogViewModelBase
     {
         _dataStore = dataStore;
         _notificationManager = notificationManager;
+
+        EditItem.IsAdd = true;
     }
 
     public override async Task InitialAsync(Dictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
@@ -39,15 +44,17 @@ public partial class ProductEditViewModel : DialogViewModelBase
     public async Task<bool> LoadAsync(int id)
     {
         _id = id;
-        var item = await _dataStore.GetAsync(id);
+        _product = await _dataStore.GetAsync(id);
 
-        if (item == null)
+        if (_product == null)
         {
             _notificationManager.Show(new Notification("错误", "数据不存在", NotificationType.Error));
             return false;
         }
 
-        EditItem = TinyMapper.Map<ItemEditViewModel>(item);
+        EditItem = TinyMapper.Map<ItemEditViewModel>(_product);
+
+        EditItem.IsAdd = false;
 
         return true;
     }
@@ -70,19 +77,62 @@ public partial class ProductEditViewModel : DialogViewModelBase
             return;
         }
 
-        if (_id.HasValue)
+        try
         {
-            // 
-            var newItem = TinyMapper.Map<Product>(EditItem);
-            newItem.Id = _id.Value;
-            await _dataStore.UpdateAsync(newItem);
-        }
-        else
-        {
-            await _dataStore.InsertAsync(TinyMapper.Map<Product>(EditItem));
-        }
 
-        _notificationManager.Show(new Notification("提示", "保存成功", NotificationType.Success));
+            if (_product != null)
+            {
+                await _dataStore.UpdateAsync(
+                    productId: EditItem.ProductId,
+                    category: EditItem.Category!,
+                    productCode: EditItem.ProductCode!,
+                    productName: EditItem.ProductName!,
+                    productModel: EditItem.ProductModel,
+                    brandName: EditItem.BrandName,
+                    pack: EditItem.Pack,
+                    stockUnitName: EditItem.StockUnitName,
+                    unitPrice: EditItem.UnitPrice);
+
+                if (_product!.TotalCount != EditItem.TotalCount)
+                {
+                    await _dataStore.UpdateTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
+                }
+            }
+            else
+            {
+                if (await _dataStore.IsExistsAsync(EditItem.ProductId))
+                {
+                    throw new System.Exception($"产品ID = {EditItem.ProductId} 已存在");
+                }
+
+                await _dataStore.InsertAsync(
+                    productId: EditItem.ProductId,
+                    category: EditItem.Category!,
+                    productCode: EditItem.ProductCode!,
+                    productName: EditItem.ProductName!,
+                    productModel: EditItem.ProductModel,
+                    brandName: EditItem.BrandName,
+                    pack: EditItem.Pack,
+                    stockUnitName: EditItem.StockUnitName,
+                    unitPrice: EditItem.UnitPrice);
+
+                if (!string.IsNullOrWhiteSpace(EditItem.OrderNo))
+                {
+                    await _dataStore.AddOrderMapAsync(EditItem.ProductId, EditItem.OrderNo, EditItem.UnitPrice, EditItem.TotalCount, EditItem.TotalPrice);
+                    await _dataStore.InsertOrderAsync(EditItem.OrderNo, EditItem.OrderNo, EditItem.TotalPrice, 0, EditItem.TotalPrice, DateTime.Now, EditItem.TotalCount);
+                }
+                else
+                    await _dataStore.UpdateTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
+            }
+
+            _notificationManager.Show(new Notification("提示", "保存成功", NotificationType.Success));
+        }
+        catch (System.Exception ex)
+        {
+            _notificationManager.Show(new Notification("错误", ex.Message, NotificationType.Error));
+
+            return;
+        }
 
         Close();
     }

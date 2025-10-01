@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EStockApp.Models;
 
-public class OrderInfoSyncModel
+public class OrderSyncModel
 {
     public string OrderId { get; set; } = null!;
     public string OrderNo { get; set; } = null!;
@@ -13,5 +13,10 @@ public class OrderInfoSyncModel
     public DateTime OrderTime { get; set; }
     public int ItemsCount { get; set; }
 
-    public List<OrderProductItemSyncModel> Products { get; set; } = new List<OrderProductItemSyncModel>();
+    public List<OrderItemSyncModel> Products { get; set; } = new List<OrderItemSyncModel>();
+
+    public override string ToString()
+    {
+        return $"{OrderNo}";
+    }
 }

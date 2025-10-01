@@ -7,10 +7,8 @@
     xmlns:sys="using:system"
     xmlns:vm="using:EStockApp.ViewModels"
     Title="同步"
-    Width="500"
+    Width="600"
     Height="380"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     x:CompileBindings="True"
     x:DataType="vm:SyncWindowViewModel"
     CanResize="False"
@@ -29,6 +27,11 @@
                     MaxYear="{Binding MaxYear}"
                     MonthFormat="MM"
                     SelectedDate="{Binding StartDate, Mode=TwoWay}" />
+                <!--<CheckBox
+                    VerticalAlignment="Center"
+                    Content="从订单同步"
+                    IsChecked="{Binding LoadFromOrder, Mode=TwoWay}"
+                    IsEnabled="{Binding !IsBusy}" />-->
                 <Button Command="{Binding StartCommand}" Theme="{DynamicResource SolidButton}">开始同步</Button>
             </StackPanel>
         </Grid>

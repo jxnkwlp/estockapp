@@ -4,6 +4,7 @@ using EStockApp.Data;
 using EStockApp.Services;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,6 +17,9 @@ public partial class OrderListViewModel : DialogViewModelBase
 
     [ObservableProperty]
     private string? _filter;
+
+    [ObservableProperty]
+    private decimal? _totalOrderAmount;
 
     private readonly IDataStore _dataStore;
 
@@ -41,6 +45,8 @@ public partial class OrderListViewModel : DialogViewModelBase
         {
             Orders.Add(item);
         }
+
+        TotalOrderAmount = list.Sum(x => x.RealPrice);
     }
 
     [RelayCommand]

@@ -12,10 +12,10 @@ namespace EStockApp.Services.OrderSync;
 
 public class BrowserOrderHistorySync : IOrderHistorySync
 {
-    private const string _loginUrl = "https://passport.jlc.com/login?redirectUrl=https://member.szlcsc.com/member/history/list.html&appId=LC_PUB&backCode=1";
+    private const string _loginUrl = "https://passport.jlc.com/login?redirectUrl=https://member.szlcsc.com/member/history/list.html";
     private const string _historyUrl = "https://order-api.szlcsc.com/member/history/list";
-    private const string _orderUrl = "https://order-api.szlcsc.com/member/order/details";
     private const string _orderListUrl = "https://order-api.szlcsc.com/member/order/list";
+    private const string _orderUrl = "https://order-api.szlcsc.com/member/order/details";
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
@@ -24,10 +24,8 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         _jsonSerializerOptions.Converters.Add(new CustomDateTimeConverter());
     }
 
-    public async IAsyncEnumerable<OrderProductHistorySyncResult> GetHistoriesAsync(DateOnly startDate)
+    public async IAsyncEnumerable<OrderItemsSyncResult> GetHistoriesAsync(DateOnly startDate)
     {
-        yield return new OrderProductHistorySyncResult(SyncStatus.Tips, "初始化...");
-
         await using var browser = await CreateBrowserAsync();
 
         await using var page = await browser.NewPageAsync();
@@ -37,32 +35,28 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderProductHistorySyncResult(SyncStatus.Error, $"访问异常：{response.Status}");
+            yield return new OrderItemsSyncResult($"访问异常：{response.Status}");
         }
 
         if ((await response.TextAsync()).Contains("needLogin"))
         {
-            yield return new OrderProductHistorySyncResult(SyncStatus.Tips, $"请登录...");
+            yield return new OrderItemsSyncResult($"请登录...");
             await ShowLoginAsync();
         }
 
         await Task.Delay(1000);
 
-        yield return new OrderProductHistorySyncResult(SyncStatus.Tips, "正在加载...");
-
         var apiPage = await browser.NewPageAsync();
         await InitialPageAsync(apiPage);
 
-        await foreach (var item in ListOrderProductsAsync(page, startDate, pageNum: 1))
+        await foreach (var item in ListHistoriesAsync(page, startDate, pageNum: 1))
         {
             yield return item;
         }
     }
 
-    public async IAsyncEnumerable<OrderInfoSyncResult> GetOrderListAsync(DateOnly startDate)
+    public async IAsyncEnumerable<OrderSyncResult> GetOrdersAsync(DateOnly startDate)
     {
-        yield return new OrderInfoSyncResult(SyncStatus.Tips, "初始化...");
-
         await using var browser = await CreateBrowserAsync();
 
         await using var page = await browser.NewPageAsync();
@@ -72,18 +66,16 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderInfoSyncResult(SyncStatus.Error, $"访问异常：{response.Status}");
+            yield return new OrderSyncResult($"访问异常：{response.Status}");
         }
 
         if ((await response.TextAsync()).Contains("needLogin"))
         {
-            yield return new OrderInfoSyncResult(SyncStatus.Tips, $"请登录...");
+            yield return new OrderSyncResult($"请登录...");
             await ShowLoginAsync();
         }
 
         await Task.Delay(1000);
-
-        yield return new OrderInfoSyncResult(SyncStatus.Tips, "正在加载...");
 
         var apiPage = await browser.NewPageAsync();
         await InitialPageAsync(apiPage);
@@ -94,8 +86,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         }
     }
 
-
-    public async Task<OrderInfoSyncModel> GetOrderAsync(string id, bool loadItems = false)
+    public async Task<OrderSyncModel> GetOrderAsync(string id, bool loadItems = false)
     {
         await using var browser = await CreateBrowserAsync();
 
@@ -104,7 +95,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         return await GetOrderAsync(page, id, loadItems);
     }
 
-    private async Task<OrderInfoSyncModel> GetOrderAsync(IPage page, string id, bool loadItems = false)
+    private async Task<OrderSyncModel> GetOrderAsync(IPage page, string id, bool loadItems = false)
     {
         await InitialPageAsync(page);
 
@@ -136,7 +127,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         var order = json.RootElement.GetProperty("result").GetProperty("orderVO").Deserialize<OrderDetailsVO>(_jsonSerializerOptions)!;
 
-        var orderInfo = new OrderInfoSyncModel
+        var orderInfo = new OrderSyncModel
         {
             OrderId = id,
             OrderNo = order.OrderCode!,
@@ -154,7 +145,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
             foreach (var item in products)
             {
-                orderInfo.Products.Add(new OrderProductItemSyncModel
+                orderInfo.Products.Add(new OrderItemSyncModel
                 {
                     OrderId = id,
                     OrderNumber = orderInfo.OrderNo,
@@ -265,7 +256,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         await page.SetCookieAsync(await GetCookies() ?? new CookieParam[0]);
     }
 
-    private static async IAsyncEnumerable<OrderProductHistorySyncResult> ListOrderProductsAsync(IPage page, DateOnly startDate, int pageNum = 1)
+    private async IAsyncEnumerable<OrderItemsSyncResult> ListHistoriesAsync(IPage page, DateOnly startDate, int pageNum = 1)
     {
         var url = $"{_historyUrl}?currentPage={pageNum}&pageSize=15&orderTimeBegin={startDate.ToString("yyyy-MM-dd")}";
 
@@ -273,12 +264,12 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderProductHistorySyncResult(SyncStatus.Error, $"查询失败: {response.Status}");
+            yield return new OrderItemsSyncResult($"查询失败: {response.Status}");
         }
 
         if (string.IsNullOrWhiteSpace(await response.TextAsync()))
         {
-            yield return new OrderProductHistorySyncResult(SyncStatus.Error, "查询失败");
+            yield return new OrderItemsSyncResult("查询失败");
         }
 
 #if DEBUG
@@ -289,14 +280,14 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (json.Code != 200 || json.Result == null)
         {
-            yield return new OrderProductHistorySyncResult(SyncStatus.Error, "查询失败");
+            yield return new OrderItemsSyncResult($"查询失败: ({json.Code})");
         }
 
         if (json.Result?.HisOrderList != null)
         {
             foreach (var item in json.Result.HisOrderList)
             {
-                var product = new OrderProductItemSyncModel()
+                var product = new OrderItemSyncModel()
                 {
                     BrandName = item.BrandName,
                     Category = item.CatalogName,
@@ -314,20 +305,20 @@ public class BrowserOrderHistorySync : IOrderHistorySync
                     OrderId = item.Uuid,
                 };
 
-                yield return new OrderProductHistorySyncResult(product, $"获取成功: 订单{item.OrderCode}，编号{item.ProductCode}，数量{item.FinalNumber}");
+                yield return new OrderItemsSyncResult(product);
             }
         }
 
         if (json.Result?.Page?.TotalPage > pageNum)
         {
-            await foreach (var item in ListOrderProductsAsync(page, startDate, pageNum + 1))
+            await foreach (var item in ListHistoriesAsync(page, startDate, pageNum + 1))
             {
                 yield return item;
             }
         }
     }
 
-    private async IAsyncEnumerable<OrderInfoSyncResult> ListOrdersAsync(IPage page, DateOnly startDate, int pageNum = 1)
+    private async IAsyncEnumerable<OrderSyncResult> ListOrdersAsync(IPage page, DateOnly startDate, int pageNum = 1)
     {
         var url = $"{_orderListUrl}?currentPage={pageNum}&pageSize=10&sd={startDate.ToString("yyyy-MM-dd")}+00:00:00";
 
@@ -335,12 +326,12 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderInfoSyncResult(SyncStatus.Error, $"查询失败: {response.Status}");
+            yield return new OrderSyncResult($"查询失败: {response.Status}");
         }
 
         if (string.IsNullOrWhiteSpace(await response.TextAsync()))
         {
-            yield return new OrderInfoSyncResult(SyncStatus.Error, "查询失败");
+            yield return new OrderSyncResult("查询失败");
         }
 
 #if DEBUG
@@ -350,7 +341,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         var result = json.RootElement.Deserialize<ApiResult>(_jsonSerializerOptions);
         if (result?.Code != 200)
         {
-            yield return new OrderInfoSyncResult(SyncStatus.Error, "查询失败：" + result!.Code);
+            yield return new OrderSyncResult("查询失败：" + result!.Code);
         }
 
         var pager = json.RootElement.GetProperty("result").GetProperty("page").Deserialize<ApiPageInfoResult>(_jsonSerializerOptions)!;
@@ -358,12 +349,16 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         foreach (var item in orderList)
         {
+            await Task.Delay(500);
+
             var orderInfo = await GetOrderAsync(page, item.Uuid, true);
 
-            yield return new OrderInfoSyncResult(orderInfo, $"获取成功: 订单{orderInfo.OrderNo}");
+            yield return new OrderSyncResult(orderInfo);
         }
 
-        // 
+        await Task.Delay(1000);
+
+        // next page
         if (pager!.TotalPage > pageNum)
         {
             await foreach (var item in ListOrdersAsync(page, startDate, pageNum + 1))

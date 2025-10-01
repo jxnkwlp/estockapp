@@ -1,7 +1,6 @@
 using EStockApp.Data;
 using LiteDB;
 using LiteDB.Async;
-using LiteDB.Queryable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +10,8 @@ namespace EStockApp.Services;
 
 public class LocalDataStore : IDataStore, IDisposable
 {
+    private DateTime _lastCheckpoint = DateTime.MinValue;
+
     private LiteDatabaseAsync _db = null!;
 
     public LocalDataStore()
@@ -41,6 +42,7 @@ public class LocalDataStore : IDataStore, IDisposable
         await collection.EnsureIndexAsync(x => x.Category);
         await collection.EnsureIndexAsync(x => x.Pack);
         await collection.EnsureIndexAsync(x => x.ProductCode);
+        await collection.EnsureIndexAsync(x => x.ProductModel);
     }
 
     private ILiteCollectionAsync<Product> GetProducts()
@@ -51,6 +53,11 @@ public class LocalDataStore : IDataStore, IDisposable
     private ILiteCollectionAsync<Order> GetOrder()
     {
         return _db.GetCollection<Order>("Orders");
+    }
+
+    private ILiteCollectionAsync<Category> GetCategory()
+    {
+        return _db.GetCollection<Category>("Categories");
     }
 
     public async Task DeleteAsync(int id)
@@ -67,15 +74,24 @@ public class LocalDataStore : IDataStore, IDisposable
         return await (collection.FindByIdAsync(id));
     }
 
-    public async Task<int> GetCountAsync(string? category = null, string? filter = null)
+    public async Task<int> GetCategoryCountAsync()
+    {
+        var collection = GetCategory();
+
+        var query = collection.Query();
+
+        return await query.CountAsync();
+    }
+
+    public async Task<int> GetTotalCountAsync(string? category = null, string? filter = null)
     {
         var collection = GetProducts();
 
-        var query = collection.AsQueryable();
+        var query = collection.Query();
 
         if (!string.IsNullOrEmpty(filter))
         {
-            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName.Contains(filter));
+            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName!.Contains(filter) || x.ProductModel!.Contains(filter));
         }
         if (!string.IsNullOrEmpty(category))
         {
@@ -90,36 +106,36 @@ public class LocalDataStore : IDataStore, IDisposable
     {
         var collection = GetProducts();
 
-        var query = collection.AsQueryable();
+        var query = collection.Query();
 
         if (!string.IsNullOrEmpty(filter))
         {
-            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName.Contains(filter));
+            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName!.Contains(filter) || x.ProductModel!.Contains(filter));
         }
         if (!string.IsNullOrEmpty(category))
         {
             query = query.Where(x => x.Category == category);
         }
 
-        return await query.SumAsync(x => x.StockCount);
+        return (await query.Select(x => x.StockCount).ToArrayAsync()).Sum();
     }
 
     public async Task<List<Product>> GetListAsync(int maxResultCount, int skipCount, string? category = null, string? filter = null)
     {
         var collection = GetProducts();
 
-        var query = collection.AsQueryable();
+        var query = collection.Query();
 
         if (!string.IsNullOrEmpty(filter))
         {
-            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName.Contains(filter));
+            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName!.Contains(filter) || x.ProductModel!.Contains(filter));
         }
         if (!string.IsNullOrEmpty(category))
         {
             query = query.Where(x => x.Category == category);
         }
 
-        return await query.OrderBy(x => x.Category).Skip(skipCount).Take(maxResultCount).ToListAsync();
+        return await query.OrderBy(x => x.Category).Skip(skipCount).Limit(maxResultCount).ToListAsync();
     }
 
     public async Task<bool> IncreaseStockAsync(int id, int value)
@@ -139,22 +155,9 @@ public class LocalDataStore : IDataStore, IDisposable
         }
 
         var result = await collection.UpdateAsync(item);
-        return result;
-    }
 
-    public async Task<int> InsertAsync(Product item)
-    {
-        var collection = GetProducts();
+        await AutoCheckpointAsync();
 
-        var result = await collection.InsertAsync(item);
-        return result.AsInt32;
-    }
-
-    public Task<bool> IsExistsAsync(int productId)
-    {
-        var collection = GetProducts();
-
-        var result = collection.ExistsAsync(x => x.ProductId == productId);
         return result;
     }
 
@@ -175,79 +178,144 @@ public class LocalDataStore : IDataStore, IDisposable
         }
 
         var result = await collection.UpdateAsync(item);
+
+        await AutoCheckpointAsync();
+
         return result;
     }
 
-    public async Task<bool> UpdateAsync(Product item)
+    public async Task<bool> IsExistsAsync(int productId)
     {
         var collection = GetProducts();
 
-        var model = await collection.FindByIdAsync(item.Id);
-        if (model == null)
-        {
-            throw new Exception("不存在的数据");
-        }
+        var result = await collection.ExistsAsync(x => x.ProductId == productId);
 
-        model.BrandName = item.BrandName;
-        model.OrderCodes = item.OrderCodes;
-        model.Category = item.Category;
-        model.Pack = item.Pack;
-        model.ProductCode = item.ProductCode;
-        model.ProductModel = item.ProductModel;
-        model.ProductName = item.ProductName;
-        model.TotalCount = item.TotalCount;
-        model.StockCount = item.StockCount;
+        await AutoCheckpointAsync();
 
-        var result = await collection.UpdateAsync(item);
         return result;
     }
 
-    public async Task AddOrUpdateAsync(int productId, string orderCode, Product item)
+    public async Task<int> InsertAsync(int productId, string category, string productCode, string productName, string? productModel, string? brandName, string? pack, string? stockUnitName, decimal unitPrice)
+    {
+        var collection = GetProducts();
+
+        var model = new Product();
+        model.ProductId = productId;
+        model.BrandName = brandName;
+        model.Category = category;
+        model.Pack = pack;
+        model.ProductCode = productCode;
+        model.ProductModel = productModel;
+        model.ProductName = productName;
+        model.StockUnitName = stockUnitName;
+        model.UnitPrice = unitPrice;
+
+        var result = await collection.InsertAsync(model);
+
+        await AutoCheckpointAsync();
+
+        return result;
+    }
+
+    public async Task<bool> UpdateAsync(int productId, string category, string productCode, string productName, string? productModel, string? brandName, string? pack, string? stockUnitName, decimal unitPrice)
     {
         var collection = GetProducts();
 
         var model = await collection.FindOneAsync(x => x.ProductId == productId);
         if (model == null)
         {
-            item.StockCount = item.TotalCount;
-            await InsertAsync(item);
+            throw new Exception("不存在的数据");
         }
-        else
-        {
-            model.BrandName = item.BrandName;
-            model.Category = item.Category;
-            model.Pack = item.Pack;
-            model.ProductCode = item.ProductCode;
-            model.ProductModel = item.ProductModel;
-            model.ProductName = item.ProductName;
-            model.TotalCount = item.TotalCount;
-            model.StockUnitName = item.StockUnitName;
 
-            model.UnitPrice = item.UnitPrice;
+        model.ProductId = productId;
+        model.BrandName = brandName;
+        model.Category = category;
+        model.Pack = pack;
+        model.ProductCode = productCode;
+        model.ProductModel = productModel;
+        model.ProductName = productName;
+        model.StockUnitName = stockUnitName;
+        model.UnitPrice = unitPrice;
 
-            if (!model.OrderCodes.Contains(orderCode))
-            {
-                model.OrderCodes = model.OrderCodes.Concat(new[] { orderCode }).Distinct().ToArray();
+        var result = await collection.UpdateAsync(model);
 
-                model.TotalPrice += item.TotalPrice;
-            }
+        await AutoCheckpointAsync();
 
-            await collection.UpdateAsync(item);
-        }
+        return result;
     }
 
-    public Task<IReadOnlyList<string>> GetCategoryListAsync()
+    public async Task UpdateTotalCountAsync(int productId, int totalCount)
     {
         var collection = GetProducts();
 
-        var list = collection.AsQueryable()
-            .Select(x => x.Category)
-            .ToList()
-            .Distinct()
-            .Order()
-            .ToArray();
+        var model = await collection.FindOneAsync(x => x.ProductId == productId);
+        if (model == null)
+        {
+            throw new Exception("不存在的数据");
+        }
 
-        return Task.FromResult<IReadOnlyList<string>>(list);
+        model.TotalCount = totalCount;
+
+        var result = await collection.UpdateAsync(model);
+
+        await AutoCheckpointAsync();
+    }
+
+    public async Task<bool> AddOrderMapAsync(int productId, string orderNo, decimal unitPrice, int totalCount, decimal totalPrice)
+    {
+        var collection = GetProducts();
+
+        var model = await collection.FindOneAsync(x => x.ProductId == productId);
+        if (model == null)
+        {
+            throw new Exception("不存在的数据");
+        }
+
+        if (!model.OrderMaps.Any(x => x.OrderCode == orderNo))
+        {
+            model.OrderMaps.Add(new ProductOrderMap
+            {
+                OrderCode = orderNo,
+                TotalCount = totalCount,
+                TotalPrice = totalPrice,
+                UnitPrice = unitPrice,
+            });
+
+            // 
+            model.StockCount += totalCount;
+            model.TotalAmount += totalPrice;
+        }
+
+        // update product
+        model.UnitPrice = unitPrice;
+        model.TotalCount = model.OrderMaps.Sum(x => x.TotalCount);
+
+        var result = await collection.UpdateAsync(model);
+
+        await AutoCheckpointAsync();
+
+        return result;
+    }
+
+    public async Task<IReadOnlyList<string>> GetCategoryListAsync()
+    {
+        var collection = GetCategory();
+
+        var list = await collection.FindAllAsync();
+
+        return list.Select(x => x.Name).OrderBy(x => x).ToList();
+    }
+
+    public async Task<bool> AddCategoryAsync(string name)
+    {
+        var collection = GetCategory();
+
+        if (await collection.ExistsAsync(x => x.Name.ToLowerInvariant() == name.ToLowerInvariant()))
+            return false;
+
+        await collection.InsertAsync(new Category { Name = name });
+
+        return true;
     }
 
     public async Task BackupAsync()
@@ -263,34 +331,45 @@ public class LocalDataStore : IDataStore, IDisposable
         // File.Copy("db.data", $"db_{DateTime.Now.ToString("yyyyMMddHHmmss")}.data");
     }
 
+    protected async Task AutoCheckpointAsync()
+    {
+        if (_lastCheckpoint.AddMinutes(1) < DateTime.Now)
+        {
+            _lastCheckpoint = DateTime.Now;
+            await _db.CheckpointAsync();
+        }
+    }
+
     public void Dispose()
     {
         _db.Dispose();
     }
 
-    public async Task AddOrUpdateOrderAsync(Order order)
+    public async Task<bool> OrderExistsAsync(string orderId)
     {
         var collection = GetOrder();
 
-        var exist = await collection.FindOneAsync(x => x.OrderId == order.OrderId);
+        return await collection.ExistsAsync(x => x.OrderId == orderId);
+    }
 
-        if (exist != null)
-        {
-            exist.OrderNo = order.OrderNo;
-            exist.OrderId = order.OrderId;
-            exist.RealPrice = order.RealPrice;
-            exist.TotalPrice = order.TotalPrice;
-            exist.TotalDiscount = order.TotalDiscount;
-            exist.OrderTime = order.OrderTime;
-            exist.ItemsCount = order.ItemsCount;
+    public async Task<int> InsertOrderAsync(string orderId, string orderNo, decimal totalPrice, decimal totalDiscount, decimal realPrice, DateTime orderTime, int itemsCount)
+    {
+        var collection = GetOrder();
 
-            await collection.UpdateAsync(exist);
-        }
-        else
+        var result = await collection.InsertAsync(new Order
         {
-            order.Id = 0;
-            await collection.InsertAsync(order);
-        }
+            ItemsCount = itemsCount,
+            OrderNo = orderNo,
+            TotalPrice = totalPrice,
+            TotalDiscount = totalDiscount,
+            RealPrice = realPrice,
+            OrderId = orderId,
+            OrderTime = orderTime,
+        });
+
+        await AutoCheckpointAsync();
+
+        return result.AsInt32;
     }
 
     public async Task<List<Order>> GetOrderListAsync()
@@ -302,10 +381,4 @@ public class LocalDataStore : IDataStore, IDisposable
         return list.ToList();
     }
 
-    public async Task<bool> OrderExistsAsync(string orderId)
-    {
-        var collection = GetOrder();
-
-        return await collection.ExistsAsync(x => x.OrderId == orderId);
-    }
 }

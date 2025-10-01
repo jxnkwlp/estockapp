@@ -6,6 +6,26 @@ namespace EStockApp.ViewModels;
 public partial class ItemEditViewModel : ObservableValidator
 {
     [ObservableProperty]
+    private bool _isAdd;
+
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Range(minimum: 0, maximum: 9999999)]
+    private decimal _unitPrice;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Range(minimum: 0, maximum: 9999999)]
+    private decimal _totalPrice;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [MaxLength(50)]
+    private string? _orderNo;
+
+
+    [ObservableProperty]
     [NotifyDataErrorInfo]
     [Required]
     [Range(minimum: 0, maximum: 9999999)]
@@ -26,14 +46,14 @@ public partial class ItemEditViewModel : ObservableValidator
     [ObservableProperty]
     [NotifyDataErrorInfo]
     [Required]
-    [MaxLength(50)]
+    [MaxLength(500)]
     private string? _productName;
 
-    //[ObservableProperty]
-    //[NotifyDataErrorInfo]
-    //[Required]
-    //[MaxLength(50)]
-    //private string? _productModel;
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required]
+    [MaxLength(50)]
+    private string? _productModel;
 
     [ObservableProperty]
     [NotifyDataErrorInfo]
@@ -47,7 +67,10 @@ public partial class ItemEditViewModel : ObservableValidator
     private string? _pack;
 
     [ObservableProperty]
-    private string[]? _orderCodes;
+    [Required]
+    [NotifyDataErrorInfo]
+    [MaxLength(16)]
+    private string? _stockUnitName;
 
     [ObservableProperty]
     [Required]

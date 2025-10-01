@@ -7,9 +7,9 @@ namespace EStockApp.Services.OrderSync;
 
 public interface IOrderHistorySync
 {
-    IAsyncEnumerable<OrderProductHistorySyncResult> GetHistoriesAsync(DateOnly startDate);
+    IAsyncEnumerable<OrderItemsSyncResult> GetHistoriesAsync(DateOnly startDate);
 
-    IAsyncEnumerable<OrderInfoSyncResult> GetOrderListAsync(DateOnly startDate);
+    IAsyncEnumerable<OrderSyncResult> GetOrdersAsync(DateOnly startDate);
 
-    Task<OrderInfoSyncModel> GetOrderAsync(string id, bool loadItems = false);
+    Task<OrderSyncModel> GetOrderAsync(string id, bool loadItems = false);
 }

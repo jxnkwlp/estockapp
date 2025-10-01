@@ -38,6 +38,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private string? _selectCategory = "全部";
 
     [ObservableProperty]
+    private int _totalCategoryCount;
+    [ObservableProperty]
     private int _totalCount;
     [ObservableProperty]
     private int _totalStockCount;
@@ -63,6 +65,11 @@ public partial class MainWindowViewModel : ViewModelBase
         var historySyncWindow = App.ServiceProvider.GetRequiredService<SyncWindow>();
         historySyncWindow.DataContext = App.ServiceProvider.GetRequiredService<SyncWindowViewModel>();
         await historySyncWindow.ShowDialog(App.ServiceProvider.GetRequiredService<MainWindow>());
+
+        ListFilter = null;
+        SelectCategory = null;
+        await LoadCategory();
+        await LoadList();
     }
 
     [RelayCommand]
@@ -88,7 +95,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            TotalCount = await _dataStore.GetCountAsync();
+            TotalCategoryCount = await _dataStore.GetCategoryCountAsync();
+            TotalCount = await _dataStore.GetTotalCountAsync();
             TotalStockCount = await _dataStore.GetStockCountAsync();
 
             var list = await _dataStore.GetListAsync(int.MaxValue, 0, SelectCategory == "全部" ? null : SelectCategory, ListFilter);
@@ -118,7 +126,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var vm = App.ServiceProvider.GetRequiredService<StockEditViewModel>();
 
-        vm.InitialAsync();
+        await vm.InitialAsync();
         vm.SetId(id);
 
         await DialogHost.ShowDialogAsync(new StockEditView(), vm, new DialogOptions()
@@ -135,12 +143,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var vm = App.ServiceProvider.GetRequiredService<ProductEditViewModel>();
 
-        vm.InitialAsync();
+        await vm.InitialAsync();
 
         await DialogHost.ShowDialogAsync(new ProductEditView(), vm, new DialogOptions()
         {
-            Title = "编辑",
+            Title = "新增",
             CanResize = false,
+            Height = 600,
         });
 
         await LoadList();
@@ -156,12 +165,13 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        vm.InitialAsync();
+        await vm.InitialAsync();
 
         await DialogHost.ShowDialogAsync(new ProductEditView(), vm, new DialogOptions()
         {
             Title = "编辑",
             CanResize = false,
+            Height = 510,
         });
 
         await LoadList();
@@ -197,13 +207,13 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (item.OrderCodes?.Any() != true)
+        if (item.OrderMaps.Any() != true)
         {
             await MessageBoxManager.GetMessageBoxStandard("提示", "无相关订单", ButtonEnum.Ok).ShowWindowDialogAsync(App.ServiceProvider.GetRequiredService<MainWindow>());
         }
         else
         {
-            await MessageBoxManager.GetMessageBoxStandard("提示", string.Join("\n", item.OrderCodes!), ButtonEnum.Ok).ShowWindowDialogAsync(App.ServiceProvider.GetRequiredService<MainWindow>());
+            await MessageBoxManager.GetMessageBoxStandard("提示", string.Join("\n", item.OrderMaps.Select(x => x.OrderCode)!), ButtonEnum.Ok).ShowWindowDialogAsync(App.ServiceProvider.GetRequiredService<MainWindow>());
         }
     }
 
@@ -248,7 +258,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var vm = App.ServiceProvider.GetRequiredService<OrderListViewModel>();
 
-        vm.InitialAsync(new Dictionary<string, object?> { { "fromProductId", fromProductId } });
+        await vm.InitialAsync(new Dictionary<string, object?> { { "fromProductId", fromProductId } });
 
         await DialogHost.ShowDialogAsync(new OrderListView(), vm, new DialogOptions()
         {

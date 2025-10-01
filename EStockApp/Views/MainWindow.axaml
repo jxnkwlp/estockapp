@@ -7,7 +7,7 @@
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
-    Title="电子器件库存记录管理 v1.1"
+    Title="电子器件库存记录管理"
     Width="1200"
     Height="600"
     MinWidth="800"
@@ -194,8 +194,9 @@
 
         <Grid Grid.Row="2" Margin="10,4">
             <StackPanel Orientation="Horizontal" Spacing="10">
-                <TextBlock Text="{Binding TotalCount, StringFormat='合计种类：{0}'}" />
-                <TextBlock Text="{Binding TotalStockCount, StringFormat='合计库存：{0}'}" />
+                <TextBlock Text="{Binding TotalCategoryCount, StringFormat='合计种类：{0}'}" />
+                <TextBlock Text="{Binding TotalCount, StringFormat='合计数量：{0}'}" />
+                <TextBlock Text="{Binding TotalStockCount, StringFormat='剩余库存：{0}'}" />
             </StackPanel>
         </Grid>
 

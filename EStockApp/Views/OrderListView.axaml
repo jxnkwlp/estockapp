@@ -18,26 +18,36 @@
 
     <Grid Margin="10" RowDefinitions="auto,*">
         <Grid Grid.Row="0">
-            <StackPanel
-                IsEnabled="{Binding !IsBusy}"
-                Orientation="Horizontal"
-                Spacing="10">
-                <TextBox
-                    MinWidth="200"
-                    MaxWidth="500"
-                    Margin="0"
-                    Classes="clearButton"
-                    Text="{Binding Filter, Mode=TwoWay}"
-                    Watermark="输入订单编号">
-                    <TextBox.KeyBindings>
-                        <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
-                    </TextBox.KeyBindings>
-                </TextBox>
-                <Button
-                    Command="{Binding SearchCommand}"
-                    Content="搜索"
-                    Theme="{DynamicResource SolidButton}" />
-            </StackPanel>
+            <Grid ColumnDefinitions="*,auto">
+                <StackPanel
+                    IsEnabled="{Binding !IsBusy}"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <TextBox
+                        MinWidth="200"
+                        MaxWidth="500"
+                        Margin="0"
+                        Classes="clearButton"
+                        Text="{Binding Filter, Mode=TwoWay}"
+                        Watermark="输入订单编号">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button
+                        Command="{Binding SearchCommand}"
+                        Content="搜索"
+                        Theme="{DynamicResource SolidButton}" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <Label>累计实付：￥</Label>
+                    <Label Content="{Binding TotalOrderAmount}" />
+                </StackPanel>
+            </Grid>
+
         </Grid>
         <Grid Grid.Row="1">
             <DataGrid
@@ -50,22 +60,27 @@
                 <DataGrid.Columns>
 
                     <ct:DataGridTextSelectableColumn
-                        Width="150"
+                        Width="160"
                         Binding="{Binding OrderNo}"
                         Header="编号"
                         SortMemberPath="OrderNo" />
 
                     <ct:DataGridTextSelectableColumn
-                        Width="150"
+                        Width="100"
                         Binding="{Binding RealPrice}"
-                        Header="金额"
+                        Header="实付金额"
                         SortMemberPath="RealPrice" />
 
+                    <ct:DataGridTextSelectableColumn
+                        Width="100"
+                        Binding="{Binding TotalDiscount}"
+                        Header="折扣金额"
+                        SortMemberPath="TotalDiscount" />
 
                     <ct:DataGridTextSelectableColumn
-                        Width="150"
+                        Width="100"
                         Binding="{Binding ItemsCount}"
-                        Header="项数"
+                        Header="数量"
                         SortMemberPath="ItemsCount" />
 
                     <ct:DataGridTextSelectableColumn

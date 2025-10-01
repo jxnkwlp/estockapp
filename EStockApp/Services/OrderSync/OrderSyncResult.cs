@@ -2,9 +2,17 @@ using EStockApp.Models;
 
 namespace EStockApp.Services.OrderSync;
 
-public class OrderSyncResult : SyncResult<OrderProductItemSyncModel>
+public class OrderSyncResult : SyncResult<OrderSyncModel>
 {
-    public OrderSyncResult(OrderProductItemSyncModel result) : base(result)
+    public OrderSyncResult()
+    {
+    }
+
+    public OrderSyncResult(string error) : base(error)
+    {
+    }
+
+    public OrderSyncResult(OrderSyncModel result) : base(result)
     {
     }
 }

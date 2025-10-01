@@ -1,6 +1,6 @@
 namespace EStockApp.Models;
 
-public class OrderProductItemSyncModel
+public class OrderItemSyncModel
 {
     public string OrderId { get; set; } = null!;
     public string OrderNumber { get; set; } = null!;
@@ -19,4 +19,9 @@ public class OrderProductItemSyncModel
     public decimal Price { get; set; }
     public decimal TotalPrice { get; set; }
     public string? StockUnitName { get; set; }
+
+    public override string ToString()
+    {
+        return $"{ProductId}({ProductCode}) {ProductName}: {TotalCount}";
+    }
 }
