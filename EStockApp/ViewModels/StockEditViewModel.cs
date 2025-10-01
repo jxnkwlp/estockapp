@@ -41,12 +41,12 @@ public partial class StockEditViewModel : DialogViewModelBase
         if (IsSet)
         {
             // 设置
-            await _dataStore.SetStockAsync(_id, Value);
+            await _dataStore.SetProductStockAsync(_id, Value);
         }
         else
         {
             // 增减
-            await _dataStore.IncreaseStockAsync(_id, Value);
+            await _dataStore.IncreaseProductStockAsync(_id, Value);
         }
 
         Close();

@@ -44,7 +44,7 @@ public partial class ProductEditViewModel : DialogViewModelBase
     public async Task<bool> LoadAsync(int id)
     {
         _id = id;
-        _product = await _dataStore.GetAsync(id);
+        _product = await _dataStore.GetProductAsync(id);
 
         if (_product == null)
         {
@@ -82,7 +82,7 @@ public partial class ProductEditViewModel : DialogViewModelBase
 
             if (_product != null)
             {
-                await _dataStore.UpdateAsync(
+                await _dataStore.UpdateProductAsync(
                     productId: EditItem.ProductId,
                     category: EditItem.Category!,
                     productCode: EditItem.ProductCode!,
@@ -95,17 +95,17 @@ public partial class ProductEditViewModel : DialogViewModelBase
 
                 if (_product!.TotalCount != EditItem.TotalCount)
                 {
-                    await _dataStore.UpdateTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
+                    await _dataStore.UpdateProductTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
                 }
             }
             else
             {
-                if (await _dataStore.IsExistsAsync(EditItem.ProductId))
+                if (await _dataStore.IsProductExistsAsync(EditItem.ProductId))
                 {
                     throw new System.Exception($"产品ID = {EditItem.ProductId} 已存在");
                 }
 
-                await _dataStore.InsertAsync(
+                await _dataStore.InsertProductAsync(
                     productId: EditItem.ProductId,
                     category: EditItem.Category!,
                     productCode: EditItem.ProductCode!,
@@ -118,11 +118,11 @@ public partial class ProductEditViewModel : DialogViewModelBase
 
                 if (!string.IsNullOrWhiteSpace(EditItem.OrderNo))
                 {
-                    await _dataStore.AddOrderMapAsync(EditItem.ProductId, EditItem.OrderNo, EditItem.UnitPrice, EditItem.TotalCount, EditItem.TotalPrice);
+                    await _dataStore.AddProductOrderMapAsync(EditItem.ProductId, EditItem.OrderNo, EditItem.UnitPrice, EditItem.TotalCount, EditItem.TotalPrice);
                     await _dataStore.InsertOrderAsync(EditItem.OrderNo, EditItem.OrderNo, EditItem.TotalPrice, 0, EditItem.TotalPrice, DateTime.Now, EditItem.TotalCount);
                 }
                 else
-                    await _dataStore.UpdateTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
+                    await _dataStore.UpdateProductTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
             }
 
             _notificationManager.Show(new Notification("提示", "保存成功", NotificationType.Success));

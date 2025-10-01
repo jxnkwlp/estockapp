@@ -35,6 +35,8 @@ public static class ServiceCollectionExtensions
             return instance;
         });
 
+        services.AddSingleton<DbMigration>();
+
         services.AddSingleton<WindowNotificationManager>((s) => new WindowNotificationManager(TopLevel.GetTopLevel(s.GetRequiredService<MainWindow>())) { MaxItems = 3 });
         services.AddSingleton<TopLevel>((s) => TopLevel.GetTopLevel(s.GetRequiredService<MainWindow>())!);
 

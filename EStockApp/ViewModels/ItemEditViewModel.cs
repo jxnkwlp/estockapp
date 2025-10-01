@@ -28,7 +28,7 @@ public partial class ItemEditViewModel : ObservableValidator
     [ObservableProperty]
     [NotifyDataErrorInfo]
     [Required]
-    [Range(minimum: 0, maximum: 9999999)]
+    [Range(minimum: 0, maximum: int.MaxValue)]
     private int _productId;
 
     [ObservableProperty]

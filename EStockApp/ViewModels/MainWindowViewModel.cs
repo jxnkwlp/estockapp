@@ -46,17 +46,28 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private readonly IDataStore _dataStore;
     private readonly WindowNotificationManager _notificationManager;
+    private readonly DbMigration _dbMigration;
 
-    public MainWindowViewModel(IDataStore dataStore, WindowNotificationManager notificationManager)
+    public MainWindowViewModel(IDataStore dataStore, WindowNotificationManager notificationManager, DbMigration dbMigration)
     {
         _dataStore = dataStore;
         _notificationManager = notificationManager;
+        _dbMigration = dbMigration;
     }
 
     public override async Task InitialAsync(Dictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
     {
+        await LoadSummaryAsync();
         await LoadCategory();
         await LoadList();
+
+        var migration_251110 = await _dataStore.GetSettingValueAsync("migration_251110");
+        if (string.IsNullOrWhiteSpace(migration_251110))
+        {
+            await _dbMigration.MigrateAsync();
+
+            await _dataStore.SetSettingValueAsync("migration_251110", "1");
+        }
     }
 
     [RelayCommand]
@@ -68,6 +79,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         ListFilter = null;
         SelectCategory = null;
+
+        await LoadSummaryAsync();
         await LoadCategory();
         await LoadList();
     }
@@ -95,11 +108,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            TotalCategoryCount = await _dataStore.GetCategoryCountAsync();
-            TotalCount = await _dataStore.GetTotalCountAsync();
-            TotalStockCount = await _dataStore.GetStockCountAsync();
-
-            var list = await _dataStore.GetListAsync(int.MaxValue, 0, SelectCategory == "全部" ? null : SelectCategory, ListFilter);
+            var list = await _dataStore.GetProductListAsync(int.MaxValue, 0, SelectCategory == "全部" ? null : SelectCategory, ListFilter);
             Items.Clear();
             Items = new ObservableCollection<ProductItemModel>(list.Select(x => TinyMapper.Map<ProductItemModel>(x)));
         }
@@ -107,6 +116,13 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             _notificationManager.Show(new Notification("错误", ex.Message, NotificationType.Error));
         }
+    }
+
+    private async Task LoadSummaryAsync()
+    {
+        TotalCategoryCount = await _dataStore.GetProductCountAsync();
+        TotalCount = await _dataStore.GetTotalCountAsync();
+        TotalStockCount = await _dataStore.GetStockCountAsync();
     }
 
     private async Task LoadCategory()
@@ -180,7 +196,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task DeleteAsync(int id)
     {
-        var item = await _dataStore.GetAsync(id);
+        var item = await _dataStore.GetProductAsync(id);
         if (item == null)
         {
             _notificationManager.Show(new Notification("错误", "数据不存在", NotificationType.Error));
@@ -191,7 +207,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (await box.ShowWindowDialogAsync(App.ServiceProvider.GetRequiredService<MainWindow>()) == ButtonResult.Yes)
         {
-            await _dataStore.DeleteAsync(id);
+            await _dataStore.DeleteProductAsync(id);
         }
 
         await LoadList();
@@ -200,7 +216,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task ShowOrderNoAsync(int id)
     {
-        var item = await _dataStore.GetAsync(id);
+        var item = await _dataStore.GetProductAsync(id);
         if (item == null)
         {
             _notificationManager.Show(new Notification("错误", "数据不存在", NotificationType.Error));
@@ -220,7 +236,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenUrlAsync(int id)
     {
-        var item = await _dataStore.GetAsync(id);
+        var item = await _dataStore.GetProductAsync(id);
         if (item == null)
         {
             _notificationManager.Show(new Notification("错误", "数据不存在", NotificationType.Error));

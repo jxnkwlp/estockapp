@@ -32,10 +32,16 @@ public class Product
     ///  合计总数
     /// </summary>
     public int TotalCount { get; set; }
+
     /// <summary>
     ///  剩余库存
     /// </summary>
     public int StockCount { get; set; }
+
+    /// <summary>
+    ///  已使用
+    /// </summary>
+    public int UsedCount { get; set; }
 
     public List<ProductOrderMap> OrderMaps { get; set; } = new List<ProductOrderMap>();
 }

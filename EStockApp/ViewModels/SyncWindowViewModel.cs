@@ -102,16 +102,16 @@ public partial class SyncWindowViewModel : ViewModelBase
 
         foreach (var item in orderInfo.Products)
         {
-            if (!await _dataStore.IsExistsAsync(item.ProductId))
+            if (!await _dataStore.IsProductExistsAsync(item.ProductId))
             {
-                await _dataStore.InsertAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
-                await _dataStore.AddOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
+                await _dataStore.InsertProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
+                await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
                 await _dataStore.AddCategoryAsync(item.Category);
             }
             else
             {
-                await _dataStore.UpdateAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
-                await _dataStore.AddOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
+                await _dataStore.UpdateProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
+                await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
                 await _dataStore.AddCategoryAsync(item.Category);
             }
 
@@ -134,16 +134,16 @@ public partial class SyncWindowViewModel : ViewModelBase
             AddLogs($"新增订单 {orderInfo.OrderNo}");
         }
 
-        if (!await _dataStore.IsExistsAsync(item.ProductId))
+        if (!await _dataStore.IsProductExistsAsync(item.ProductId))
         {
-            await _dataStore.InsertAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
-            await _dataStore.AddOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
+            await _dataStore.InsertProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
+            await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
             await _dataStore.AddCategoryAsync(item.Category);
         }
         else
         {
-            await _dataStore.UpdateAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
-            await _dataStore.AddOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
+            await _dataStore.UpdateProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
+            await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalCount);
             await _dataStore.AddCategoryAsync(item.Category);
         }
 

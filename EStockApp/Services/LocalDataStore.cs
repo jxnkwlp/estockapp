@@ -60,14 +60,19 @@ public class LocalDataStore : IDataStore, IDisposable
         return _db.GetCollection<Category>("Categories");
     }
 
-    public async Task DeleteAsync(int id)
+    private ILiteCollectionAsync<Setting> GetSettings()
+    {
+        return _db.GetCollection<Setting>("Settings");
+    }
+
+    public async Task DeleteProductAsync(int id)
     {
         var collection = GetProducts();
 
         await collection.DeleteAsync(id);
     }
 
-    public async Task<Product?> GetAsync(int id)
+    public async Task<Product?> GetProductAsync(int id)
     {
         var collection = GetProducts();
 
@@ -81,6 +86,13 @@ public class LocalDataStore : IDataStore, IDisposable
         var query = collection.Query();
 
         return await query.CountAsync();
+    }
+
+    public async Task<int> GetProductCountAsync()
+    {
+        var collection = GetProducts();
+
+        return await collection.CountAsync();
     }
 
     public async Task<int> GetTotalCountAsync(string? category = null, string? filter = null)
@@ -98,7 +110,7 @@ public class LocalDataStore : IDataStore, IDisposable
             query = query.Where(x => x.Category == category);
         }
 
-        return await query.CountAsync();
+        return (await query.Select(x => x.TotalCount).ToArrayAsync()).Sum();
     }
 
 
@@ -120,7 +132,7 @@ public class LocalDataStore : IDataStore, IDisposable
         return (await query.Select(x => x.StockCount).ToArrayAsync()).Sum();
     }
 
-    public async Task<List<Product>> GetListAsync(int maxResultCount, int skipCount, string? category = null, string? filter = null)
+    public async Task<List<Product>> GetProductListAsync(int maxResultCount, int skipCount, string? category = null, string? filter = null)
     {
         var collection = GetProducts();
 
@@ -138,7 +150,7 @@ public class LocalDataStore : IDataStore, IDisposable
         return await query.OrderBy(x => x.Category).Skip(skipCount).Limit(maxResultCount).ToListAsync();
     }
 
-    public async Task<bool> IncreaseStockAsync(int id, int value)
+    public async Task<bool> IncreaseProductStockAsync(int id, int value)
     {
         var collection = GetProducts();
 
@@ -154,6 +166,8 @@ public class LocalDataStore : IDataStore, IDisposable
             item.StockCount = 0;
         }
 
+        item.UsedCount = item.TotalCount - item.StockCount;
+
         var result = await collection.UpdateAsync(item);
 
         await AutoCheckpointAsync();
@@ -161,7 +175,7 @@ public class LocalDataStore : IDataStore, IDisposable
         return result;
     }
 
-    public async Task<bool> SetStockAsync(int id, int value)
+    public async Task<bool> SetProductStockAsync(int id, int value)
     {
         var collection = GetProducts();
 
@@ -177,6 +191,8 @@ public class LocalDataStore : IDataStore, IDisposable
             item.StockCount = 0;
         }
 
+        item.UsedCount = item.TotalCount - item.StockCount;
+
         var result = await collection.UpdateAsync(item);
 
         await AutoCheckpointAsync();
@@ -184,7 +200,7 @@ public class LocalDataStore : IDataStore, IDisposable
         return result;
     }
 
-    public async Task<bool> IsExistsAsync(int productId)
+    public async Task<bool> IsProductExistsAsync(int productId)
     {
         var collection = GetProducts();
 
@@ -195,7 +211,7 @@ public class LocalDataStore : IDataStore, IDisposable
         return result;
     }
 
-    public async Task<int> InsertAsync(int productId, string category, string productCode, string productName, string? productModel, string? brandName, string? pack, string? stockUnitName, decimal unitPrice)
+    public async Task<int> InsertProductAsync(int productId, string category, string productCode, string productName, string? productModel, string? brandName, string? pack, string? stockUnitName, decimal unitPrice)
     {
         var collection = GetProducts();
 
@@ -217,7 +233,7 @@ public class LocalDataStore : IDataStore, IDisposable
         return result;
     }
 
-    public async Task<bool> UpdateAsync(int productId, string category, string productCode, string productName, string? productModel, string? brandName, string? pack, string? stockUnitName, decimal unitPrice)
+    public async Task<bool> UpdateProductAsync(int productId, string category, string productCode, string productName, string? productModel, string? brandName, string? pack, string? stockUnitName, decimal unitPrice)
     {
         var collection = GetProducts();
 
@@ -244,7 +260,7 @@ public class LocalDataStore : IDataStore, IDisposable
         return result;
     }
 
-    public async Task UpdateTotalCountAsync(int productId, int totalCount)
+    public async Task UpdateProductTotalCountAsync(int productId, int totalCount)
     {
         var collection = GetProducts();
 
@@ -261,7 +277,7 @@ public class LocalDataStore : IDataStore, IDisposable
         await AutoCheckpointAsync();
     }
 
-    public async Task<bool> AddOrderMapAsync(int productId, string orderNo, decimal unitPrice, int totalCount, decimal totalPrice)
+    public async Task<bool> AddProductOrderMapAsync(int productId, string orderNo, decimal unitPrice, int totalCount, decimal totalPrice)
     {
         var collection = GetProducts();
 
@@ -280,15 +296,13 @@ public class LocalDataStore : IDataStore, IDisposable
                 TotalPrice = totalPrice,
                 UnitPrice = unitPrice,
             });
-
-            // 
-            model.StockCount += totalCount;
-            model.TotalAmount += totalPrice;
         }
 
         // update product
         model.UnitPrice = unitPrice;
+        model.TotalAmount = model.OrderMaps.Sum(x => x.TotalPrice);
         model.TotalCount = model.OrderMaps.Sum(x => x.TotalCount);
+        model.StockCount = model.TotalCount - model.UsedCount;
 
         var result = await collection.UpdateAsync(model);
 
@@ -381,4 +395,49 @@ public class LocalDataStore : IDataStore, IDisposable
         return list.ToList();
     }
 
+    public async Task InitProductUsedCountAsync()
+    {
+        var collection = GetProducts();
+
+        var list = (await collection.FindAllAsync()).ToArray();
+
+        foreach (var item in list)
+        {
+            if (item.UsedCount == 0 && item.StockCount < item.TotalCount)
+            {
+                item.UsedCount = item.TotalCount - item.StockCount;
+
+                await collection.UpdateAsync(item);
+            }
+        }
+    }
+
+    public async Task<string?> GetSettingValueAsync(string key)
+    {
+        var query = GetSettings();
+
+        return (await query.FindOneAsync(x => x.Key == key))?.Value;
+    }
+
+    public async Task SetSettingValueAsync(string key, string? value = null)
+    {
+        var collection = GetSettings();
+
+        var exist = await collection.FindOneAsync(x => x.Key == key);
+
+        if (exist != null)
+        {
+            exist.Value = value;
+
+            await collection.UpdateAsync(exist);
+        }
+        else
+        {
+            await collection.InsertAsync(new Setting
+            {
+                Key = key,
+                Value = value
+            });
+        }
+    }
 }
