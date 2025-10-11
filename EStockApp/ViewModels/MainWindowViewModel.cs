@@ -57,6 +57,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public override async Task InitialAsync(Dictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
     {
+        await _dataStore.RebuildAsync();
+
         await LoadSummaryAsync();
         await LoadCategory();
         await LoadList();

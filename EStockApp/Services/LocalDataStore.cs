@@ -72,6 +72,11 @@ public class LocalDataStore : IDataStore, IDisposable
         await collection.DeleteAsync(id);
     }
 
+    public async Task RebuildAsync()
+    {
+        await AutoCheckpointAsync();
+    }
+
     public async Task<Product?> GetProductAsync(int id)
     {
         var collection = GetProducts();
@@ -347,7 +352,7 @@ public class LocalDataStore : IDataStore, IDisposable
 
     protected async Task AutoCheckpointAsync()
     {
-        if (_lastCheckpoint.AddMinutes(1) < DateTime.Now)
+        if (_lastCheckpoint.AddSeconds(10) < DateTime.Now)
         {
             _lastCheckpoint = DateTime.Now;
             await _db.CheckpointAsync();
@@ -440,4 +445,5 @@ public class LocalDataStore : IDataStore, IDisposable
             });
         }
     }
+
 }

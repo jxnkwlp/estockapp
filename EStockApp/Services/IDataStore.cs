@@ -7,6 +7,8 @@ namespace EStockApp.Services;
 
 public interface IDataStore
 {
+    Task RebuildAsync();
+
     Task<List<Product>> GetProductListAsync(int maxResultCount, int skipCount, string? category = null, string? filter = null);
 
     Task<Product?> GetProductAsync(int id);
