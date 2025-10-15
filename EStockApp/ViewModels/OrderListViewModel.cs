@@ -41,12 +41,16 @@ public partial class OrderListViewModel : DialogViewModelBase
 
         var list = await _dataStore.GetOrderListAsync();
 
+        TotalOrderAmount = list.Sum(x => x.RealPrice);
+
+
+        if (!string.IsNullOrWhiteSpace(Filter))
+            list = list.Where(x => x.OrderNo.Contains(Filter)).ToList();
+
         foreach (var item in list)
         {
             Orders.Add(item);
         }
-
-        TotalOrderAmount = list.Sum(x => x.RealPrice);
     }
 
     [RelayCommand]

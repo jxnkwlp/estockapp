@@ -65,6 +65,16 @@ public class LocalDataStore : IDataStore, IDisposable
         return _db.GetCollection<Setting>("Settings");
     }
 
+    private ILiteCollectionAsync<UsedSummary> GetUsedSummary()
+    {
+        return _db.GetCollection<UsedSummary>("UsedSummaries");
+    }
+
+    private ILiteCollectionAsync<UsedHistory> GetUsedHistory()
+    {
+        return _db.GetCollection<UsedHistory>("UsedHistories");
+    }
+
     public async Task DeleteProductAsync(int id)
     {
         var collection = GetProducts();
@@ -177,6 +187,8 @@ public class LocalDataStore : IDataStore, IDisposable
 
         await AutoCheckpointAsync();
 
+        await UpdateUsedAsync(item.ProductCode, item.UsedCount);
+
         return result;
     }
 
@@ -202,7 +214,38 @@ public class LocalDataStore : IDataStore, IDisposable
 
         await AutoCheckpointAsync();
 
+        await UpdateUsedAsync(item.ProductCode, item.UsedCount);
+
         return result;
+    }
+
+    public async Task UpdateUsedAsync(string productCode, int value)
+    {
+        var summaries = GetUsedSummary();
+        var history = GetUsedHistory();
+
+        var exist = await summaries.FindOneAsync(x => x.ProductCode == productCode);
+
+        if (exist != null)
+        {
+            exist.UsedCount = value;
+
+            await summaries.UpdateAsync(exist);
+        }
+        else
+        {
+            exist = new UsedSummary
+            {
+                ProductCode = productCode,
+                UsedCount = value
+            };
+
+            await summaries.InsertAsync(exist);
+        }
+
+        await history.InsertAsync(new UsedHistory() { ProductCode = productCode, UsedCount = value });
+
+        await AutoCheckpointAsync();
     }
 
     public async Task<bool> IsProductExistsAsync(int productId)
