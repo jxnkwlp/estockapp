@@ -18,7 +18,7 @@ public partial class SyncWindowViewModel : ViewModelBase
     private DateTimeOffset? _startDate = DateTimeOffset.Now.AddMonths(-2);
 
     [ObservableProperty]
-    private ObservableCollection<string> _logs = new ObservableCollection<string>();
+    private ObservableCollection<string> _logs = [];
 
     [ObservableProperty]
     private bool _loadFromOrder = true;
@@ -40,7 +40,7 @@ public partial class SyncWindowViewModel : ViewModelBase
         if (!StartDate.HasValue)
             return;
 
-        AddLogs("正在启动...");
+        AddLogs("正在初始化...");
 
         try
         {
@@ -99,6 +99,10 @@ public partial class SyncWindowViewModel : ViewModelBase
 
             AddLogs($"新增订单 {orderInfo.OrderNo}");
         }
+        else
+        {
+            AddLogs($"订单 {orderInfo.OrderNo} 已存在");
+        }
 
         foreach (var item in orderInfo.Products)
         {
@@ -115,7 +119,7 @@ public partial class SyncWindowViewModel : ViewModelBase
                 await _dataStore.AddCategoryAsync(item.Category);
             }
 
-            AddLogs($"订单({orderInfo.OrderNo}) 入库 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");
+            AddLogs($"订单({orderInfo.OrderNo})更新器件 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");
         }
     }
 
@@ -133,6 +137,10 @@ public partial class SyncWindowViewModel : ViewModelBase
 
             AddLogs($"新增订单 {orderInfo.OrderNo}");
         }
+        else
+        {
+            AddLogs($"订单 {orderId} 已存在");
+        }
 
         if (!await _dataStore.IsProductExistsAsync(item.ProductId))
         {
@@ -147,7 +155,7 @@ public partial class SyncWindowViewModel : ViewModelBase
             await _dataStore.AddCategoryAsync(item.Category);
         }
 
-        AddLogs($"订单({item.OrderNumber}) 入库 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");
+        AddLogs($"订单({item.OrderNumber})更新器件 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");
     }
 
     private bool CanStart()

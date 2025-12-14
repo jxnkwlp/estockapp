@@ -263,16 +263,18 @@ public class LocalDataStore : IDataStore, IDisposable
     {
         var collection = GetProducts();
 
-        var model = new Product();
-        model.ProductId = productId;
-        model.BrandName = brandName;
-        model.Category = category;
-        model.Pack = pack;
-        model.ProductCode = productCode;
-        model.ProductModel = productModel;
-        model.ProductName = productName;
-        model.StockUnitName = stockUnitName;
-        model.UnitPrice = unitPrice;
+        var model = new Product
+        {
+            ProductId = productId,
+            BrandName = brandName,
+            Category = category,
+            Pack = pack,
+            ProductCode = productCode,
+            ProductModel = productModel,
+            ProductName = productName,
+            StockUnitName = stockUnitName,
+            UnitPrice = unitPrice
+        };
 
         var result = await collection.InsertAsync(model);
 
