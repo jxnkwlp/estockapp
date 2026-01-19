@@ -162,7 +162,15 @@ public class LocalDataStore : IDataStore, IDisposable
             query = query.Where(x => x.Category == category);
         }
 
-        return await query.OrderBy(x => x.Category).Skip(skipCount).Limit(maxResultCount).ToListAsync();
+        return (await query
+            .OrderBy(x => x.Category)
+            .Skip(skipCount)
+            .Limit(maxResultCount)
+            .ToListAsync())
+            .OrderBy(x => x.Category)
+            .ThenBy(x => x.ProductCode)
+            .ThenBy(x => x.Pack)
+            .ToList();
     }
 
     public async Task<bool> IncreaseProductStockAsync(int id, int value)
