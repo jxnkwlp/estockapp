@@ -44,7 +44,7 @@
                         Margin="0"
                         Classes="clearButton"
                         Text="{Binding ListFilter, Mode=TwoWay}"
-                        Watermark="输入关键词">
+                        PlaceholderText="输入关键词">
                         <TextBox.KeyBindings>
                             <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
                         </TextBox.KeyBindings>

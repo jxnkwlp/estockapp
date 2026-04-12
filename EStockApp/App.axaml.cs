@@ -21,10 +21,10 @@ public class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        foreach (var plugin in BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray())
-        {
-            BindingPlugins.DataValidators.Remove(plugin);
-        }
+        //foreach (var plugin in BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray())
+        //{
+        //    BindingPlugins.DataValidators.Remove(plugin);
+        //}
 
         ServiceCollection collection = new ServiceCollection();
         collection.AddCommonServices();
