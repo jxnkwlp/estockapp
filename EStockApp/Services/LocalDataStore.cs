@@ -110,16 +110,41 @@ public class LocalDataStore : IDataStore, IDisposable
         return await collection.CountAsync();
     }
 
+    private static string[] ParseProductFilterKeywords(string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return [];
+        }
+
+        return filter.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    /// <summary>
+    /// AND across whitespace-separated keywords; each keyword may match any of Code/Name/Brand/Model/Pack (case-insensitive).
+    /// </summary>
+    private static ILiteQueryableAsync<Product> ApplyProductFilter(ILiteQueryableAsync<Product> query, string? filter)
+    {
+        foreach (var keyword in ParseProductFilterKeywords(filter))
+        {
+            var k = keyword.ToLowerInvariant();
+            query = query.Where(x =>
+                x.ProductCode.ToLower().Contains(k)
+                || x.ProductName.ToLower().Contains(k)
+                || (x.BrandName != null && x.BrandName.ToLower().Contains(k))
+                || (x.ProductModel != null && x.ProductModel.ToLower().Contains(k))
+                || (x.Pack != null && x.Pack.ToLower().Contains(k)));
+        }
+
+        return query;
+    }
+
     public async Task<int> GetTotalCountAsync(string? category = null, string? filter = null)
     {
         var collection = GetProducts();
 
-        var query = collection.Query();
+        var query = ApplyProductFilter(collection.Query(), filter);
 
-        if (!string.IsNullOrEmpty(filter))
-        {
-            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName!.Contains(filter) || x.ProductModel!.Contains(filter));
-        }
         if (!string.IsNullOrEmpty(category))
         {
             query = query.Where(x => x.Category == category);
@@ -133,12 +158,8 @@ public class LocalDataStore : IDataStore, IDisposable
     {
         var collection = GetProducts();
 
-        var query = collection.Query();
+        var query = ApplyProductFilter(collection.Query(), filter);
 
-        if (!string.IsNullOrEmpty(filter))
-        {
-            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName!.Contains(filter) || x.ProductModel!.Contains(filter));
-        }
         if (!string.IsNullOrEmpty(category))
         {
             query = query.Where(x => x.Category == category);
@@ -151,12 +172,8 @@ public class LocalDataStore : IDataStore, IDisposable
     {
         var collection = GetProducts();
 
-        var query = collection.Query();
+        var query = ApplyProductFilter(collection.Query(), filter);
 
-        if (!string.IsNullOrEmpty(filter))
-        {
-            query = query.Where(x => x.ProductCode.Contains(filter) || x.ProductName.Contains(filter) || x.BrandName!.Contains(filter) || x.ProductModel!.Contains(filter));
-        }
         if (!string.IsNullOrEmpty(category))
         {
             query = query.Where(x => x.Category == category);
