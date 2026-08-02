@@ -2,9 +2,10 @@
     x:Class="EStockApp.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="clr-namespace:EStockApp.Behaviors;assembly=EStockApp"
     xmlns:ct="clr-namespace:EStockApp.Controls;assembly=EStockApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+    xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Xaml.Behaviors.Interactivity"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
     Title="电子器件库存记录管理"
@@ -23,6 +24,15 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
+    <i:Interaction.Behaviors>
+        <behaviors:FocusControlOnKeyBehavior TargetName="FilterTextBox" />
+    </i:Interaction.Behaviors>
+
+    <Window.KeyBindings>
+        <KeyBinding Command="{Binding SearchCommand}" Gesture="F5" />
+        <KeyBinding Command="{Binding ClearFiltersCommand}" Gesture="Escape" />
+    </Window.KeyBindings>
+
     <Grid RowDefinitions="auto,*,auto">
 
         <Grid Margin="10" ColumnDefinitions="*,auto">
@@ -31,14 +41,20 @@
                     IsEnabled="{Binding !IsBusy}"
                     Orientation="Horizontal"
                     Spacing="10">
-                    <!--<TextBlock VerticalAlignment="Center">搜索</TextBlock>-->
                     <ComboBox
+                        x:Name="CategoryComboBox"
                         Width="150"
+                        AutoScrollToSelectedItem="True"
+                        IsTextSearchEnabled="False"
                         ItemsSource="{Binding CategoryList}"
                         MaxDropDownHeight="350"
-                        SelectedIndex="0"
-                        SelectedValue="{Binding SelectCategory, Mode=TwoWay}" />
+                        SelectedItem="{Binding SelectCategory, Mode=TwoWay}">
+                        <i:Interaction.Behaviors>
+                            <behaviors:CategoryLetterNavigationBehavior />
+                        </i:Interaction.Behaviors>
+                    </ComboBox>
                     <TextBox
+                        x:Name="FilterTextBox"
                         MinWidth="200"
                         MaxWidth="500"
                         Margin="0"
@@ -93,46 +109,59 @@
                 IsReadOnly="True"
                 ItemsSource="{Binding Items, Mode=OneWay}"
                 SelectionMode="Single">
+                <i:Interaction.Behaviors>
+                    <behaviors:DataGridUxBehavior />
+                </i:Interaction.Behaviors>
                 <DataGrid.Columns>
 
                     <ct:DataGridTextSelectableColumn
                         Width="150"
                         Binding="{Binding Category}"
                         Header="类目"
-                        SortMemberPath="Category" />
+                        SortMemberPath="Category"
+                        Tag="Category" />
 
                     <ct:DataGridTextSelectableColumn
                         Width="*"
                         MinWidth="200"
                         Binding="{Binding ProductName}"
                         Header="名称"
-                        SortMemberPath="ProductName" />
+                        SortMemberPath="ProductName"
+                        Tag="ProductName" />
 
                     <ct:DataGridTextSelectableColumn
                         Width="150"
                         Binding="{Binding ProductModel}"
-                        Header="型号" />
+                        Header="型号"
+                        SortMemberPath="ProductModel"
+                        Tag="ProductModel" />
 
                     <ct:DataGridTextSelectableColumn
                         Width="150"
                         Binding="{Binding Pack}"
-                        Header="封装" />
+                        Header="封装"
+                        SortMemberPath="Pack"
+                        Tag="Pack" />
 
                     <ct:DataGridTextSelectableColumn
                         Width="150"
                         Binding="{Binding BrandName}"
-                        Header="品牌" />
+                        Header="品牌"
+                        SortMemberPath="BrandName"
+                        Tag="BrandName" />
 
                     <ct:DataGridTextSelectableColumn
                         Width="120"
                         Binding="{Binding ProductCode}"
                         Header="编号"
-                        SortMemberPath="ProductCode" />
+                        SortMemberPath="ProductCode"
+                        Tag="ProductCode" />
 
                     <DataGridTemplateColumn
                         Width="100"
                         Header="数量"
-                        SortMemberPath="StockCount">
+                        SortMemberPath="StockCount"
+                        Tag="StockCount">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel
@@ -147,7 +176,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Width="130" Header="操作">
+                    <DataGridTemplateColumn Width="130" Header="操作" Tag="Actions">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel

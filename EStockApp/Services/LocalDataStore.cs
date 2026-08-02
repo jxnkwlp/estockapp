@@ -103,11 +103,18 @@ public class LocalDataStore : IDataStore, IDisposable
         return await query.CountAsync();
     }
 
-    public async Task<int> GetProductCountAsync()
+    public async Task<int> GetProductCountAsync(string? category = null, string? filter = null)
     {
         var collection = GetProducts();
 
-        return await collection.CountAsync();
+        var query = ApplyProductFilter(collection.Query(), filter);
+
+        if (!string.IsNullOrEmpty(category))
+        {
+            query = query.Where(x => x.Category == category);
+        }
+
+        return await query.CountAsync();
     }
 
     private static string[] ParseProductFilterKeywords(string? filter)

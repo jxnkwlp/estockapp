@@ -15,7 +15,7 @@ public interface IDataStore
 
     Task<int> GetCategoryCountAsync();
 
-    Task<int> GetProductCountAsync();
+    Task<int> GetProductCountAsync(string? category = null, string? filter = null);
     Task<int> GetTotalCountAsync(string? category = null, string? filter = null);
     Task<int> GetStockCountAsync(string? category = null, string? filter = null);
 

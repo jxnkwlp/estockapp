@@ -1,4 +1,7 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 
 namespace EStockApp.Controls;
 
@@ -11,6 +14,7 @@ public class DataGridTextSelectableColumn : DataGridTextColumn
             Name = "CellTextBlockBorder",
             Padding = new Avalonia.Thickness(10, 0),
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Background = Avalonia.Media.Brushes.Transparent,
         };
 
         var textBlock = new SelectableTextBlock
@@ -20,6 +24,7 @@ public class DataGridTextSelectableColumn : DataGridTextColumn
         };
 
         root.Child = textBlock;
+        root.AddHandler(InputElement.PointerPressedEvent, OnCellPointerPressed, RoutingStrategies.Tunnel);
 
         if (Binding != null)
         {
@@ -42,5 +47,22 @@ public class DataGridTextSelectableColumn : DataGridTextColumn
         }
 
         return root;
+    }
+
+    private static void OnCellPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(sender as Control).Properties.IsLeftButtonPressed)
+            return;
+
+        if (sender is not Control control)
+            return;
+
+        var row = control.FindAncestorOfType<DataGridRow>();
+        var grid = control.FindAncestorOfType<DataGrid>();
+        if (row?.DataContext is null || grid is null)
+            return;
+
+        if (!Equals(grid.SelectedItem, row.DataContext))
+            grid.SelectedItem = row.DataContext;
     }
 }

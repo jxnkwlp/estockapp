@@ -34,6 +34,7 @@
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="HotAvalonia" Version="3.0.2" PrivateAssets="All" Publish="True" />
+    <PackageReference Include="TinyPinyin" Version="1.1.0" />
     <PackageReference Include="Xaml.Behaviors.Avalonia" Version="11.3.9" />
   </ItemGroup>
 
