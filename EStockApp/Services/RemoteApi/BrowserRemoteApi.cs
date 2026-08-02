@@ -8,9 +8,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace EStockApp.Services.OrderSync;
+namespace EStockApp.Services.RemoteApi;
 
-public class BrowserOrderHistorySync : IOrderHistorySync
+public class BrowserRemoteApi : IRemoteApi
 {
     private const string _loginUrl = "https://passport.jlc.com/login?redirectUrl=https://member.szlcsc.com/member/history/list.html";
     private const string _historyUrl = "https://order-api.szlcsc.com/member/history/list";
@@ -19,12 +19,12 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-    static BrowserOrderHistorySync()
+    static BrowserRemoteApi()
     {
         _jsonSerializerOptions.Converters.Add(new CustomDateTimeConverter());
     }
 
-    public async IAsyncEnumerable<OrderItemsSyncResult> GetHistoriesAsync(DateOnly startDate)
+    public async IAsyncEnumerable<OrderItemsRemoteResult> GetHistoriesAsync(DateOnly startDate)
     {
         await using var browser = await CreateBrowserAsync();
 
@@ -35,12 +35,12 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderItemsSyncResult($"访问异常：{response.Status}");
+            yield return new OrderItemsRemoteResult($"访问异常：{response.Status}");
         }
 
         if ((await response.TextAsync()).Contains("needLogin"))
         {
-            yield return new OrderItemsSyncResult($"请登录...");
+            yield return new OrderItemsRemoteResult($"请登录...");
             await ShowLoginAsync();
         }
 
@@ -55,7 +55,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         }
     }
 
-    public async IAsyncEnumerable<OrderSyncResult> GetOrdersAsync(DateOnly startDate)
+    public async IAsyncEnumerable<OrderRemoteResult> GetOrdersAsync(DateOnly startDate)
     {
         await using var browser = await CreateBrowserAsync();
 
@@ -66,12 +66,12 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderSyncResult($"访问异常：{response.Status}");
+            yield return new OrderRemoteResult($"访问异常：{response.Status}");
         }
 
         if ((await response.TextAsync()).Contains("needLogin"))
         {
-            yield return new OrderSyncResult($"请登录...");
+            yield return new OrderRemoteResult($"请登录...");
             await ShowLoginAsync();
         }
 
@@ -86,13 +86,24 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         }
     }
 
-    public async Task<OrderSyncModel> GetOrderAsync(string id, bool loadItems = false)
+    public async Task<OrderSyncModel?> GetOrderAsync(string id, bool loadItems = false)
     {
         await using var browser = await CreateBrowserAsync();
 
         await using var page = await browser.NewPageAsync();
 
         return await GetOrderAsync(page, id, loadItems);
+    }
+
+    public Task<RemoteResult<ProductDetailModel>> GetProductDetailAsync(string productCode)
+    {
+        if (string.IsNullOrWhiteSpace(productCode))
+        {
+            return Task.FromResult(new RemoteResult<ProductDetailModel>("编号不能为空"));
+        }
+
+        // TODO: 待补充立创搜索/商品 API
+        return Task.FromResult(new RemoteResult<ProductDetailModel>("商品 API 尚未配置"));
     }
 
     private async Task<OrderSyncModel> GetOrderAsync(IPage page, string id, bool loadItems = false)
@@ -135,7 +146,6 @@ public class BrowserOrderHistorySync : IOrderHistorySync
             TotalDiscount = order.UseCouponMoney,
             TotalPrice = order.ProductTotalMoney,
             OrderTime = order.OrderTime,
-            // ItemsCount = order.ZhNormalProductList.Count, 
         };
 
         if (loadItems)
@@ -158,7 +168,6 @@ public class BrowserOrderHistorySync : IOrderHistorySync
                     ProductId = item.ProductId,
                     ProductModel = item.ProductModel,
                     ProductName = item.ProductName,
-                    // OrderTime = item.OrderTime,
                     Price = item.ProductPrice,
                     TotalPrice = item.ProductTotalMoney,
                     StockUnitName = item.StockUnitName,
@@ -244,19 +253,16 @@ public class BrowserOrderHistorySync : IOrderHistorySync
             DefaultViewport = null,
             Args = new[] { "--window-size=1024,650" },
             Timeout = 60 * 1000,
-            // UserDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), $".puppeteer/user-data/{_sessionId}")
         });
-
     }
 
     private static async Task InitialPageAsync(IPage page)
     {
-        //await page.SetViewportAsync(new ViewPortOptions() { Width = 1400, Height = 800 });
         await page.SetUserAgentAsync("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0");
         await page.SetCookieAsync(await GetCookies() ?? new CookieParam[0]);
     }
 
-    private async IAsyncEnumerable<OrderItemsSyncResult> ListHistoriesAsync(IPage page, DateOnly startDate, int pageNum = 1)
+    private async IAsyncEnumerable<OrderItemsRemoteResult> ListHistoriesAsync(IPage page, DateOnly startDate, int pageNum = 1)
     {
         var url = $"{_historyUrl}?currentPage={pageNum}&pageSize=15&orderTimeBegin={startDate.ToString("yyyy-MM-dd")}";
 
@@ -264,12 +270,12 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderItemsSyncResult($"查询失败: {response.Status}");
+            yield return new OrderItemsRemoteResult($"查询失败: {response.Status}");
         }
 
         if (string.IsNullOrWhiteSpace(await response.TextAsync()))
         {
-            yield return new OrderItemsSyncResult("查询失败");
+            yield return new OrderItemsRemoteResult("查询失败");
         }
 
 #if DEBUG
@@ -280,7 +286,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (json.Code != 200 || json.Result == null)
         {
-            yield return new OrderItemsSyncResult($"查询失败: ({json.Code})");
+            yield return new OrderItemsRemoteResult($"查询失败: ({json.Code})");
         }
 
         if (json.Result?.HisOrderList != null)
@@ -298,14 +304,13 @@ public class BrowserOrderHistorySync : IOrderHistorySync
                     ProductId = item.ProductId,
                     ProductModel = item.ProductModel,
                     ProductName = item.ProductName,
-                    // OrderTime = item.OrderTime,
                     Price = item.ProductPrice,
                     TotalPrice = item.ProductTotalMoney,
                     StockUnitName = item.StockUnitName,
                     OrderId = item.Uuid,
                 };
 
-                yield return new OrderItemsSyncResult(product);
+                yield return new OrderItemsRemoteResult(product);
             }
         }
 
@@ -318,7 +323,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         }
     }
 
-    private async IAsyncEnumerable<OrderSyncResult> ListOrdersAsync(IPage page, DateOnly startDate, int pageNum = 1)
+    private async IAsyncEnumerable<OrderRemoteResult> ListOrdersAsync(IPage page, DateOnly startDate, int pageNum = 1)
     {
         var url = $"{_orderListUrl}?currentPage={pageNum}&pageSize=10&sd={startDate.ToString("yyyy-MM-dd")}+00:00:00";
 
@@ -326,12 +331,12 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
         if (response.Status != System.Net.HttpStatusCode.OK)
         {
-            yield return new OrderSyncResult($"查询失败: {response.Status}");
+            yield return new OrderRemoteResult($"查询失败: {response.Status}");
         }
 
         if (string.IsNullOrWhiteSpace(await response.TextAsync()))
         {
-            yield return new OrderSyncResult("查询失败");
+            yield return new OrderRemoteResult("查询失败");
         }
 
 #if DEBUG
@@ -341,7 +346,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         var result = json.RootElement.Deserialize<ApiResult>(_jsonSerializerOptions);
         if (result?.Code != 200)
         {
-            yield return new OrderSyncResult("查询失败：" + result!.Code);
+            yield return new OrderRemoteResult("查询失败：" + result!.Code);
         }
 
         var pager = json.RootElement.GetProperty("result").GetProperty("page").Deserialize<ApiPageInfoResult>(_jsonSerializerOptions)!;
@@ -357,7 +362,7 @@ public class BrowserOrderHistorySync : IOrderHistorySync
 
             var orderInfo = await GetOrderAsync(page, item.Uuid, true);
 
-            yield return new OrderSyncResult(orderInfo);
+            yield return new OrderRemoteResult(orderInfo);
         }
 
         await Task.Delay(1000);
@@ -383,11 +388,6 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         public int Code { get; set; }
         public T? Result { get; set; }
     }
-
-    //public class ApiPagerResult<T>
-    //{
-    //    public T[] DataList { get; set; } = null!;
-    //}
 
     public class HistoryListResult
     {
@@ -418,7 +418,6 @@ public class BrowserOrderHistorySync : IOrderHistorySync
         public int FinalNumber { get; set; }
         public decimal ProductPrice { get; set; }
         public decimal ProductTotalMoney { get; set; }
-        // public DateTime OrderTime { get; set; }
         public string? StockUnitName { get; set; }
     }
 

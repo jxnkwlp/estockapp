@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EStockApp.Models;
 using EStockApp.Services;
-using EStockApp.Services.OrderSync;
+using EStockApp.Services.RemoteApi;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -24,12 +24,12 @@ public partial class SyncWindowViewModel : ViewModelBase
     private bool _loadFromOrder = true;
 
     private readonly IDataStore _dataStore;
-    private readonly IOrderHistorySync _orderHistorySync;
+    private readonly IRemoteApi _remoteApi;
 
-    public SyncWindowViewModel(IDataStore dataStore, IOrderHistorySync orderHistorySync)
+    public SyncWindowViewModel(IDataStore dataStore, IRemoteApi remoteApi)
     {
         _dataStore = dataStore;
-        _orderHistorySync = orderHistorySync;
+        _remoteApi = remoteApi;
     }
 
     [RelayCommand(CanExecute = nameof(CanStart), AllowConcurrentExecutions = false)]
@@ -47,7 +47,7 @@ public partial class SyncWindowViewModel : ViewModelBase
             if (LoadFromOrder)
             {
                 int count = 0;
-                var result = _orderHistorySync.GetOrdersAsync(DateOnly.FromDateTime(StartDate.Value.Date));
+                var result = _remoteApi.GetOrdersAsync(DateOnly.FromDateTime(StartDate.Value.Date));
 
                 await foreach (var item in result)
                 {
@@ -64,7 +64,7 @@ public partial class SyncWindowViewModel : ViewModelBase
             }
             else
             {
-                var result = _orderHistorySync.GetHistoriesAsync(DateOnly.FromDateTime(StartDate.Value.Date));
+                var result = _remoteApi.GetHistoriesAsync(DateOnly.FromDateTime(StartDate.Value.Date));
                 int count = 0;
 
                 await foreach (var item in result)
@@ -129,7 +129,7 @@ public partial class SyncWindowViewModel : ViewModelBase
 
         if (!await _dataStore.OrderExistsAsync(orderId))
         {
-            var orderInfo = await _orderHistorySync.GetOrderAsync(orderId);
+            var orderInfo = await _remoteApi.GetOrderAsync(orderId);
             if (orderInfo == null)
                 return;
 

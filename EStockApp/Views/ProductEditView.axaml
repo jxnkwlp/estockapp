@@ -79,13 +79,19 @@
                 <TextBox Grid.Column="1" Text="{Binding EditItem.BrandName, Mode=TwoWay}" />
             </Grid>
 
-            <Grid ColumnDefinitions="80,*">
+            <Grid ColumnDefinitions="80,*,Auto">
                 <Label
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Content="编号" />
                 <TextBox Grid.Column="1" Text="{Binding EditItem.ProductCode, Mode=TwoWay}" />
+                <Button
+                    Grid.Column="2"
+                    Margin="8,0,0,0"
+                    Command="{Binding LoadFromRemoteCommand}"
+                    Content="加载"
+                    IsEnabled="{Binding !IsBusy}" />
             </Grid>
 
             <Grid ColumnDefinitions="80,*">

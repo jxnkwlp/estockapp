@@ -3,7 +3,7 @@ using Avalonia.Controls.Notifications;
 using EStockApp.Data;
 using EStockApp.Models;
 using EStockApp.Services;
-using EStockApp.Services.OrderSync;
+using EStockApp.Services.RemoteApi;
 using EStockApp.ViewModels;
 using EStockApp.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<StockEditViewModel>();
         services.AddTransient<OrderListViewModel>();
 
-        services.AddSingleton<IOrderHistorySync, BrowserOrderHistorySync>();
+        services.AddSingleton<IRemoteApi, BrowserRemoteApi>();
 
         services.AddSingleton<IDataStore>((s) =>
         {

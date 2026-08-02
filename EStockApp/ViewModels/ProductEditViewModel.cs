@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EStockApp.Data;
 using EStockApp.Services;
+using EStockApp.Services.RemoteApi;
 using Nelibur.ObjectMapper;
 using System;
 using System.Collections.Generic;
@@ -26,11 +27,13 @@ public partial class ProductEditViewModel : DialogViewModelBase
     private ObservableCollection<string> _categoryList = new ObservableCollection<string>();
 
     private readonly IDataStore _dataStore;
+    private readonly IRemoteApi _remoteApi;
     private readonly WindowNotificationManager _notificationManager;
 
-    public ProductEditViewModel(IDataStore dataStore, WindowNotificationManager notificationManager)
+    public ProductEditViewModel(IDataStore dataStore, IRemoteApi remoteApi, WindowNotificationManager notificationManager)
     {
         _dataStore = dataStore;
+        _remoteApi = remoteApi;
         _notificationManager = notificationManager;
 
         EditItem.IsAdd = true;
@@ -65,6 +68,54 @@ public partial class ProductEditViewModel : DialogViewModelBase
 
         CategoryList.Clear();
         CategoryList = new ObservableCollection<string>(categoryList);
+    }
+
+    [RelayCommand(AllowConcurrentExecutions = false)]
+    private async Task LoadFromRemoteAsync()
+    {
+        if (string.IsNullOrWhiteSpace(EditItem.ProductCode))
+        {
+            _notificationManager.Show(new Notification("提示", "请先填写编号", NotificationType.Warning));
+            return;
+        }
+
+        IsBusy = true;
+
+        try
+        {
+            var result = await _remoteApi.GetProductDetailAsync(EditItem.ProductCode.Trim());
+            if (!result.Success || result.Result == null)
+            {
+                _notificationManager.Show(new Notification("错误", result.Error ?? "加载失败", NotificationType.Error));
+                return;
+            }
+
+            var detail = result.Result;
+            EditItem.Category = detail.Category;
+            EditItem.ProductId = detail.ProductId;
+            EditItem.ProductModel = detail.ProductModel;
+            EditItem.ProductName = detail.ProductName;
+            EditItem.Pack = detail.Pack;
+            EditItem.BrandName = detail.BrandName;
+            EditItem.ProductCode = detail.ProductCode;
+            EditItem.StockUnitName = detail.StockUnitName;
+            EditItem.UnitPrice = detail.UnitPrice;
+
+            if (!string.IsNullOrWhiteSpace(detail.Category) && !CategoryList.Contains(detail.Category))
+            {
+                CategoryList.Add(detail.Category);
+            }
+
+            _notificationManager.Show(new Notification("提示", "基本信息已加载", NotificationType.Success));
+        }
+        catch (Exception ex)
+        {
+            _notificationManager.Show(new Notification("错误", ex.Message, NotificationType.Error));
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand(AllowConcurrentExecutions = false)]
