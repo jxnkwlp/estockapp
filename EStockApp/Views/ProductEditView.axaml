@@ -2,7 +2,9 @@
     x:Class="EStockApp.ProductEditView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="clr-namespace:EStockApp.Behaviors;assembly=EStockApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Xaml.Behaviors.Interactivity"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
     Width="380"
@@ -24,23 +26,13 @@
                 <ComboBox
                     Grid.Column="1"
                     AutoScrollToSelectedItem="True"
+                    IsTextSearchEnabled="False"
                     ItemsSource="{Binding CategoryList}"
-                    SelectedIndex="0"
-                    SelectedItem="{Binding EditItem.Category, Mode=TwoWay}" />
-            </Grid>
-
-            <Grid ColumnDefinitions="80,*">
-                <Label
-                    Margin="0,0,10,0"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Content="产品ID" />
-                <NumericUpDown
-                    Grid.Column="1"
-                    FormatString="0"
-                    Maximum="99999999"
-                    Minimum="0"
-                    Value="{Binding EditItem.ProductId, Mode=TwoWay}" />
+                    SelectedItem="{Binding EditItem.Category, Mode=TwoWay}">
+                    <i:Interaction.Behaviors>
+                        <behaviors:CategoryLetterNavigationBehavior />
+                    </i:Interaction.Behaviors>
+                </ComboBox>
             </Grid>
 
             <Grid ColumnDefinitions="80,*">
@@ -49,7 +41,7 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Content="名称" />
-                <TextBox Grid.Column="1" Text="{Binding EditItem.ProductModel, Mode=TwoWay}" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.ProductName, Mode=TwoWay}" />
             </Grid>
 
             <Grid ColumnDefinitions="80,*">
@@ -58,7 +50,7 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Content="型号" />
-                <TextBox Grid.Column="1" Text="{Binding EditItem.ProductName, Mode=TwoWay}" />
+                <TextBox Grid.Column="1" Text="{Binding EditItem.ProductModel, Mode=TwoWay}" />
             </Grid>
 
             <Grid ColumnDefinitions="80,*">
@@ -99,10 +91,23 @@
                     Margin="0,0,10,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
+                    Content="产品ID" />
+                <NumericUpDown
+                    Grid.Column="1"
+                    FormatString="0"
+                    Maximum="99999999"
+                    Minimum="0"
+                    Value="{Binding EditItem.ProductId, Mode=TwoWay}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="80,*">
+                <Label
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
                     Content="单位" />
                 <TextBox Grid.Column="1" Text="{Binding EditItem.StockUnitName, Mode=TwoWay}" />
             </Grid>
-
 
             <Grid ColumnDefinitions="80,*" IsVisible="{Binding EditItem.IsAdd}">
                 <Label
@@ -120,7 +125,6 @@
                     Content="订单金额" />
                 <TextBox Grid.Column="1" Text="{Binding EditItem.TotalPrice, Mode=TwoWay}" />
             </Grid>
-
 
             <Grid ColumnDefinitions="80,*">
                 <Label
@@ -154,6 +158,7 @@
                 <NumericUpDown
                     Grid.Column="1"
                     FormatString="0"
+                    IsEnabled="{Binding EditItem.IsAdd}"
                     Maximum="99999999"
                     Minimum="0"
                     Value="{Binding EditItem.StockCount, Mode=TwoWay}" />

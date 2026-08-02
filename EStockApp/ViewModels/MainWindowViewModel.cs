@@ -16,7 +16,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TinyPinyin;
+using EStockApp.Helpers;
 using Notification = Avalonia.Controls.Notifications.Notification;
 using WindowNotificationManager = Avalonia.Controls.Notifications.WindowNotificationManager;
 
@@ -106,27 +106,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool TrySelectCategoryByLetter(char letter)
     {
-        if (CategoryList.Count == 0)
+        if (!CategorySelectionHelper.TrySelectNext(CategoryList, SelectCategory, letter, out var selected)
+            || selected == null)
             return false;
 
-        letter = char.ToUpperInvariant(letter);
-        var currentIndex = string.IsNullOrEmpty(SelectCategory)
-            ? -1
-            : CategoryList.IndexOf(SelectCategory);
-
-        var start = currentIndex < 0 ? 0 : currentIndex + 1;
-        for (var offset = 0; offset < CategoryList.Count; offset++)
-        {
-            var index = (start + offset) % CategoryList.Count;
-            var category = CategoryList[index];
-            if (!CategoryMatchesLetter(category, letter))
-                continue;
-
-            SelectCategory = category;
-            return true;
-        }
-
-        return false;
+        SelectCategory = selected;
+        return true;
     }
 
     public IReadOnlyList<ContextMenuActionItem> BuildRowContextActions(ProductItemModel item, string? columnTag)
@@ -237,18 +222,6 @@ public partial class MainWindowViewModel : ViewModelBase
         "StockCount" => $"{item.StockCount}/{item.TotalCount}",
         _ => null,
     };
-
-    private static bool CategoryMatchesLetter(string category, char letter)
-    {
-        if (string.IsNullOrEmpty(category))
-            return false;
-
-        if (char.ToUpperInvariant(category[0]) == letter)
-            return true;
-
-        var initials = PinyinHelper.GetPinyinInitials(category);
-        return !string.IsNullOrEmpty(initials) && char.ToUpperInvariant(initials[0]) == letter;
-    }
 
     [RelayCommand]
     private async Task ShowSyncViewAsync()
@@ -452,8 +425,6 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             return;
         }
-
-        await vm.InitialAsync();
 
         await DialogHost.ShowDialogAsync(new ProductEditView(), vm, new DialogOptions()
         {

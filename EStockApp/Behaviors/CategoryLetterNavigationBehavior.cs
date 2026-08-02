@@ -1,8 +1,10 @@
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Xaml.Interactivity;
-using EStockApp.ViewModels;
+using EStockApp.Helpers;
 
 namespace EStockApp.Behaviors;
 
@@ -22,19 +24,26 @@ public sealed class CategoryLetterNavigationBehavior : Behavior<ComboBox>
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (AssociatedObject?.DataContext is not MainWindowViewModel vm)
+        if (AssociatedObject == null)
             return;
 
         if (e.Key < Key.A || e.Key > Key.Z)
             return;
 
         var letter = (char)('A' + (e.Key - Key.A));
-        if (!vm.TrySelectCategoryByLetter(letter))
+        var categories = AssociatedObject.Items
+            .OfType<string>()
+            .ToList();
+
+        if (categories.Count == 0 && AssociatedObject.ItemsSource is IEnumerable<string> source)
+            categories = source.ToList();
+
+        if (!CategorySelectionHelper.TrySelectNext(categories, AssociatedObject.SelectedItem as string, letter, out var selected)
+            || selected == null)
             return;
 
-        if (vm.SelectCategory is { } selected)
-            AssociatedObject.ScrollIntoView(selected);
-
+        AssociatedObject.SelectedItem = selected;
+        AssociatedObject.ScrollIntoView(selected);
         e.Handled = true;
     }
 }

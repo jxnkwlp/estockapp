@@ -56,8 +56,9 @@ public partial class ProductEditViewModel : DialogViewModelBase
         }
 
         EditItem = TinyMapper.Map<ItemEditViewModel>(_product);
-
         EditItem.IsAdd = false;
+
+        await LoadCategory();
 
         return true;
     }
@@ -65,9 +66,35 @@ public partial class ProductEditViewModel : DialogViewModelBase
     private async Task LoadCategory()
     {
         var categoryList = (await _dataStore.GetCategoryListAsync()).ToList();
-
-        CategoryList.Clear();
         CategoryList = new ObservableCollection<string>(categoryList);
+        SyncCategorySelection();
+    }
+
+    /// <summary>
+    /// Ensures the current category exists in <see cref="CategoryList"/> and refreshes ComboBox selection.
+    /// </summary>
+    public void SyncCategorySelection()
+    {
+        if (!string.IsNullOrWhiteSpace(EditItem.Category))
+        {
+            var current = EditItem.Category.Trim();
+            var match = CategoryList.FirstOrDefault(c => string.Equals(c, current, StringComparison.Ordinal));
+            if (match == null)
+            {
+                CategoryList.Add(current);
+                match = current;
+            }
+
+            // Force ComboBox rebind: same value may not raise PropertyChanged.
+            EditItem.Category = null;
+            EditItem.Category = match;
+            return;
+        }
+
+        if (EditItem.IsAdd && CategoryList.Count > 0)
+        {
+            EditItem.Category = CategoryList[0];
+        }
     }
 
     [RelayCommand(AllowConcurrentExecutions = false)]
@@ -91,7 +118,6 @@ public partial class ProductEditViewModel : DialogViewModelBase
             }
 
             var detail = result.Result;
-            EditItem.Category = detail.Category;
             EditItem.ProductId = detail.ProductId;
             EditItem.ProductModel = detail.ProductModel;
             EditItem.ProductName = detail.ProductName;
@@ -100,11 +126,8 @@ public partial class ProductEditViewModel : DialogViewModelBase
             EditItem.ProductCode = detail.ProductCode;
             EditItem.StockUnitName = detail.StockUnitName;
             EditItem.UnitPrice = detail.UnitPrice;
-
-            if (!string.IsNullOrWhiteSpace(detail.Category) && !CategoryList.Contains(detail.Category))
-            {
-                CategoryList.Add(detail.Category);
-            }
+            EditItem.Category = detail.Category;
+            SyncCategorySelection();
 
             _notificationManager.Show(new Notification("提示", "基本信息已加载", NotificationType.Success));
         }
@@ -144,9 +167,9 @@ public partial class ProductEditViewModel : DialogViewModelBase
                     stockUnitName: EditItem.StockUnitName,
                     unitPrice: EditItem.UnitPrice);
 
-                if (_product!.TotalCount != EditItem.TotalCount)
+                if (_product.TotalCount != EditItem.TotalCount)
                 {
-                    await _dataStore.UpdateProductTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
+                    await _dataStore.UpdateProductTotalCountAsync(_product.ProductId, EditItem.TotalCount);
                 }
             }
             else
@@ -156,7 +179,7 @@ public partial class ProductEditViewModel : DialogViewModelBase
                     throw new System.Exception($"产品ID = {EditItem.ProductId} 已存在");
                 }
 
-                await _dataStore.InsertProductAsync(
+                var id = await _dataStore.InsertProductAsync(
                     productId: EditItem.ProductId,
                     category: EditItem.Category!,
                     productCode: EditItem.ProductCode!,
@@ -173,7 +196,10 @@ public partial class ProductEditViewModel : DialogViewModelBase
                     await _dataStore.InsertOrderAsync(EditItem.OrderNo, EditItem.OrderNo, EditItem.TotalPrice, 0, EditItem.TotalPrice, DateTime.Now, EditItem.TotalCount);
                 }
                 else
-                    await _dataStore.UpdateProductTotalCountAsync(_product!.ProductId, EditItem.TotalCount);
+                {
+                    await _dataStore.UpdateProductTotalCountAsync(EditItem.ProductId, EditItem.TotalCount);
+                    await _dataStore.SetProductStockAsync(id, EditItem.StockCount);
+                }
             }
 
             _notificationManager.Show(new Notification("提示", "保存成功", NotificationType.Success));
