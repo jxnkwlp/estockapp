@@ -471,11 +471,17 @@ public partial class MainWindowViewModel : ViewModelBase
         if (item.OrderMaps.Any() != true)
         {
             await MessageBoxManager.GetMessageBoxStandard("提示", "无相关订单", ButtonEnum.Ok).ShowWindowDialogAsync(App.ServiceProvider.GetRequiredService<MainWindow>());
+            return;
         }
-        else
+
+        var vm = App.ServiceProvider.GetRequiredService<RelatedOrdersViewModel>();
+        await vm.InitialAsync(new Dictionary<string, object?> { { "productId", id } });
+
+        await DialogHost.ShowDialogAsync(new RelatedOrdersView(), vm, new DialogOptions()
         {
-            await MessageBoxManager.GetMessageBoxStandard("提示", string.Join("\n", item.OrderMaps.Select(x => x.OrderCode)!), ButtonEnum.Ok).ShowWindowDialogAsync(App.ServiceProvider.GetRequiredService<MainWindow>());
-        }
+            Title = "相关订单",
+            CanResize = false,
+        });
     }
 
     [RelayCommand]

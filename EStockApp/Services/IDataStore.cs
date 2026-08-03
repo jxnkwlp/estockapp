@@ -30,7 +30,7 @@ public interface IDataStore
 
     Task UpdateProductTotalCountAsync(int productId, int totalCount);
 
-    Task<bool> AddProductOrderMapAsync(int productId, string orderNo, decimal unitPrice, int totalCount, decimal totalPrice);
+    Task<bool> AddProductOrderMapAsync(int productId, string orderNo, decimal unitPrice, int totalCount, decimal totalPrice, decimal discount = 0);
 
     Task DeleteProductAsync(int id);
 

@@ -1,0 +1,60 @@
+<UserControl
+    x:Class="EStockApp.Views.RelatedOrdersView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ct="clr-namespace:EStockApp.Controls;assembly=EStockApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:EStockApp.ViewModels"
+    Width="620"
+    Height="360"
+    d:DesignHeight="360"
+    d:DesignWidth="620"
+    x:DataType="vm:RelatedOrdersViewModel"
+    mc:Ignorable="d">
+    <Design.DataContext>
+        <vm:RelatedOrdersViewModel />
+    </Design.DataContext>
+
+    <Grid Margin="10">
+        <DataGrid
+            BorderThickness="1"
+            CanUserResizeColumns="True"
+            IsReadOnly="True"
+            ItemsSource="{Binding Orders, Mode=OneWay}"
+            SelectionMode="Single">
+            <DataGrid.Columns>
+                <ct:DataGridTextSelectableColumn
+                    Width="*"
+                    MinWidth="140"
+                    Binding="{Binding OrderCode}"
+                    Header="订单号"
+                    SortMemberPath="OrderCode" />
+
+                <ct:DataGridTextSelectableColumn
+                    Width="80"
+                    Binding="{Binding TotalCount}"
+                    Header="数量"
+                    SortMemberPath="TotalCount" />
+
+                <ct:DataGridTextSelectableColumn
+                    Width="90"
+                    Binding="{Binding UnitPrice}"
+                    Header="单价"
+                    SortMemberPath="UnitPrice" />
+
+                <ct:DataGridTextSelectableColumn
+                    Width="90"
+                    Binding="{Binding TotalPrice}"
+                    Header="价格"
+                    SortMemberPath="TotalPrice" />
+
+                <ct:DataGridTextSelectableColumn
+                    Width="90"
+                    Binding="{Binding Discount}"
+                    Header="优惠"
+                    SortMemberPath="Discount" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

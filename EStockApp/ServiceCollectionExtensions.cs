@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<MainWindow>();
         services.AddTransient<SyncWindow>();
         services.AddTransient<OrderListView>();
+        services.AddTransient<RelatedOrdersView>();
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<SyncWindowViewModel>();
@@ -25,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ProductEditViewModel>();
         services.AddTransient<StockEditViewModel>();
         services.AddTransient<OrderListViewModel>();
+        services.AddTransient<RelatedOrdersViewModel>();
 
         services.AddSingleton<IRemoteApi, BrowserRemoteApi>();
 

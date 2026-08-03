@@ -18,6 +18,7 @@ public class OrderItemSyncModel
     public int TotalCount { get; set; }
     public decimal Price { get; set; }
     public decimal TotalPrice { get; set; }
+    public decimal Discount { get; set; }
     public string? StockUnitName { get; set; }
 
     public override string ToString()

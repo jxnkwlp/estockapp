@@ -170,6 +170,7 @@ public class BrowserRemoteApi : IRemoteApi
                     ProductName = item.ProductName,
                     Price = item.ProductPrice,
                     TotalPrice = item.ProductTotalMoney,
+                    Discount = ResolveLineDiscount(item),
                     StockUnitName = item.StockUnitName,
                 });
             }
@@ -306,6 +307,7 @@ public class BrowserRemoteApi : IRemoteApi
                     ProductName = item.ProductName,
                     Price = item.ProductPrice,
                     TotalPrice = item.ProductTotalMoney,
+                    Discount = ResolveLineDiscount(item),
                     StockUnitName = item.StockUnitName,
                     OrderId = item.Uuid,
                 };
@@ -403,6 +405,14 @@ public class BrowserRemoteApi : IRemoteApi
         public int TotalRow { get; set; }
     }
 
+    private static decimal ResolveLineDiscount(ProductItem item)
+    {
+        if (item.DiscountMoney.HasValue)
+            return item.DiscountMoney.Value;
+
+        return Math.Max(0, item.ProductPrice * item.FinalNumber - item.ProductTotalMoney);
+    }
+
     public class ProductItem
     {
         public string Uuid { get; set; } = null!;
@@ -418,6 +428,8 @@ public class BrowserRemoteApi : IRemoteApi
         public int FinalNumber { get; set; }
         public decimal ProductPrice { get; set; }
         public decimal ProductTotalMoney { get; set; }
+        public decimal? DiscountMoney { get; set; }
+        public decimal? ProductDiscountPrice { get; set; }
         public string? StockUnitName { get; set; }
     }
 

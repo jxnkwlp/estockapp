@@ -52,4 +52,5 @@ public class ProductOrderMap
     public decimal UnitPrice { get; set; }
     public int TotalCount { get; set; }
     public decimal TotalPrice { get; set; }
+    public decimal Discount { get; set; }
 }

@@ -359,7 +359,7 @@ public class LocalDataStore : IDataStore, IDisposable
         await AutoCheckpointAsync();
     }
 
-    public async Task<bool> AddProductOrderMapAsync(int productId, string orderNo, decimal unitPrice, int totalCount, decimal totalPrice)
+    public async Task<bool> AddProductOrderMapAsync(int productId, string orderNo, decimal unitPrice, int totalCount, decimal totalPrice, decimal discount = 0)
     {
         var collection = GetProducts();
 
@@ -369,7 +369,8 @@ public class LocalDataStore : IDataStore, IDisposable
             throw new Exception("不存在的数据");
         }
 
-        if (!model.OrderMaps.Any(x => x.OrderCode == orderNo))
+        var existing = model.OrderMaps.FirstOrDefault(x => x.OrderCode == orderNo);
+        if (existing == null)
         {
             model.OrderMaps.Add(new ProductOrderMap
             {
@@ -377,7 +378,15 @@ public class LocalDataStore : IDataStore, IDisposable
                 TotalCount = totalCount,
                 TotalPrice = totalPrice,
                 UnitPrice = unitPrice,
+                Discount = discount,
             });
+        }
+        else
+        {
+            existing.TotalCount = totalCount;
+            existing.TotalPrice = totalPrice;
+            existing.UnitPrice = unitPrice;
+            existing.Discount = discount;
         }
 
         // update product
