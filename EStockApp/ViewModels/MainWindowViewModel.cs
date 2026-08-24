@@ -73,13 +73,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _suppressCategoryAutoSearch = false;
         _isReady = true;
 
-        var migration_251110 = await _dataStore.GetSettingValueAsync("migration_251110");
-        if (string.IsNullOrWhiteSpace(migration_251110))
-        {
-            await _dbMigration.MigrateAsync();
-
-            await _dataStore.SetSettingValueAsync("migration_251110", "1");
-        }
+        await _dbMigration.RunPendingAsync();
     }
 
     private string? ActiveCategoryFilter => SelectCategory == "全部" || string.IsNullOrEmpty(SelectCategory) ? null : SelectCategory;

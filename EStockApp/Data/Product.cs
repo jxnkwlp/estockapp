@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace EStockApp.Data;
@@ -53,4 +54,5 @@ public class ProductOrderMap
     public int TotalCount { get; set; }
     public decimal TotalPrice { get; set; }
     public decimal Discount { get; set; }
+    public DateTime? SyncedAt { get; set; }
 }

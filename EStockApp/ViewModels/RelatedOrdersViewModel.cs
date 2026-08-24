@@ -34,21 +34,6 @@ public partial class RelatedOrdersViewModel : DialogViewModelBase
             return;
 
         foreach (var map in product.OrderMaps)
-        {
-            var expectedTotalPrice = map.UnitPrice * map.TotalCount - map.Discount;
-            if (map.TotalPrice != expectedTotalPrice)
-            {
-                map.TotalPrice = expectedTotalPrice;
-                await _dataStore.AddProductOrderMapAsync(
-                    product.ProductId,
-                    map.OrderCode,
-                    map.UnitPrice,
-                    map.TotalCount,
-                    map.TotalPrice,
-                    map.Discount);
-            }
-
             Orders.Add(map);
-        }
     }
 }

@@ -75,6 +75,11 @@ public class LocalDataStore : IDataStore, IDisposable
         return _db.GetCollection<UsedHistory>("UsedHistories");
     }
 
+    private ILiteCollectionAsync<MigrationRecord> GetMigrations()
+    {
+        return _db.GetCollection<MigrationRecord>("_migrations");
+    }
+
     public async Task DeleteProductAsync(int id)
     {
         var collection = GetProducts();
@@ -369,6 +374,7 @@ public class LocalDataStore : IDataStore, IDisposable
             throw new Exception("不存在的数据");
         }
 
+        var syncedAt = DateTime.Now;
         var existing = model.OrderMaps.FirstOrDefault(x => x.OrderCode == orderNo);
         if (existing == null)
         {
@@ -379,6 +385,7 @@ public class LocalDataStore : IDataStore, IDisposable
                 TotalPrice = totalPrice,
                 UnitPrice = unitPrice,
                 Discount = discount,
+                SyncedAt = syncedAt,
             });
         }
         else
@@ -387,6 +394,7 @@ public class LocalDataStore : IDataStore, IDisposable
             existing.TotalPrice = totalPrice;
             existing.UnitPrice = unitPrice;
             existing.Discount = discount;
+            existing.SyncedAt = syncedAt;
         }
 
         // update product
@@ -501,6 +509,59 @@ public class LocalDataStore : IDataStore, IDisposable
                 await collection.UpdateAsync(item);
             }
         }
+    }
+
+    public async Task MigrateOrderMapTotalPricesAsync()
+    {
+        var collection = GetProducts();
+        var list = (await collection.FindAllAsync()).ToArray();
+
+        foreach (var product in list)
+        {
+            if (product.OrderMaps == null || product.OrderMaps.Count == 0)
+                continue;
+
+            var changed = false;
+            foreach (var map in product.OrderMaps)
+            {
+                var expectedTotalPrice = map.UnitPrice * map.TotalCount - map.Discount;
+                if (map.TotalPrice != expectedTotalPrice)
+                {
+                    map.TotalPrice = expectedTotalPrice;
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+                continue;
+
+            product.TotalAmount = product.OrderMaps.Sum(x => x.TotalPrice);
+            await collection.UpdateAsync(product);
+        }
+
+        await AutoCheckpointAsync();
+    }
+
+    public async Task<bool> IsMigrationAppliedAsync(string migrationId)
+    {
+        var collection = GetMigrations();
+        return await collection.ExistsAsync(x => x.Id == migrationId);
+    }
+
+    public async Task MarkMigrationAppliedAsync(string migrationId)
+    {
+        var collection = GetMigrations();
+
+        if (await collection.ExistsAsync(x => x.Id == migrationId))
+            return;
+
+        await collection.InsertAsync(new MigrationRecord
+        {
+            Id = migrationId,
+            AppliedAt = DateTime.Now,
+        });
+
+        await AutoCheckpointAsync();
     }
 
     public async Task<string?> GetSettingValueAsync(string key)

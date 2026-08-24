@@ -6,10 +6,10 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
-    Width="620"
+    Width="760"
     Height="360"
     d:DesignHeight="360"
-    d:DesignWidth="620"
+    d:DesignWidth="760"
     x:DataType="vm:RelatedOrdersViewModel"
     mc:Ignorable="d">
     <Design.DataContext>
@@ -54,6 +54,12 @@
                     Binding="{Binding Discount}"
                     Header="优惠"
                     SortMemberPath="Discount" />
+
+                <ct:DataGridTextSelectableColumn
+                    Width="140"
+                    Binding="{Binding SyncedAt}"
+                    Header="同步时间"
+                    SortMemberPath="SyncedAt" />
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

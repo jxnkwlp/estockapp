@@ -47,6 +47,11 @@ public interface IDataStore
 
     Task InitProductUsedCountAsync();
 
+    Task MigrateOrderMapTotalPricesAsync();
+
+    Task<bool> IsMigrationAppliedAsync(string migrationId);
+    Task MarkMigrationAppliedAsync(string migrationId);
+
     Task<string?> GetSettingValueAsync(string key);
     Task SetSettingValueAsync(string key, string? value = null);
 }
