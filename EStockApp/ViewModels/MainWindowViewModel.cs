@@ -126,6 +126,22 @@ public partial class MainWindowViewModel : ViewModelBase
             });
             hasPrimaryAction = true;
         }
+        else if (columnTag == "BrandName" && !string.IsNullOrWhiteSpace(item.BrandName))
+        {
+            actions.Add(new ContextMenuActionItem
+            {
+                Header = $"查看品牌 {item.BrandName}",
+                Command = ShowBrandDetailCommand,
+                CommandParameter = item.BrandName,
+            });
+            actions.Add(new ContextMenuActionItem
+            {
+                Header = $"过滤 {item.BrandName}",
+                Command = FilterByValueCommand,
+                CommandParameter = item.BrandName,
+            });
+            hasPrimaryAction = true;
+        }
         else if (IsFilterableColumn(columnTag) && !string.IsNullOrWhiteSpace(cellText))
         {
             actions.Add(new ContextMenuActionItem
@@ -529,6 +545,35 @@ public partial class MainWindowViewModel : ViewModelBase
 
         await LoadList();
         await LoadSummaryAsync();
+    }
+
+    [RelayCommand]
+    private async Task ShowBrandListAsync()
+    {
+        var vm = App.ServiceProvider.GetRequiredService<BrandListViewModel>();
+        await vm.InitialAsync();
+
+        await DialogHost.ShowDialogAsync(new BrandListView(), vm, new DialogOptions()
+        {
+            Title = "品牌列表",
+            CanResize = false,
+        });
+    }
+
+    [RelayCommand]
+    private async Task ShowBrandDetailAsync(string? brandName)
+    {
+        if (string.IsNullOrWhiteSpace(brandName))
+            return;
+
+        var vm = App.ServiceProvider.GetRequiredService<BrandDetailViewModel>();
+        await vm.InitialAsync(new Dictionary<string, object?> { { "brandName", brandName } });
+
+        await DialogHost.ShowDialogAsync(new BrandDetailView(), vm, new DialogOptions()
+        {
+            Title = $"品牌：{brandName}",
+            CanResize = false,
+        });
     }
 
 }

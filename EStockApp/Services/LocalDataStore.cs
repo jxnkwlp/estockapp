@@ -1,4 +1,5 @@
 using EStockApp.Data;
+using EStockApp.Models;
 using LiteDB;
 using LiteDB.Async;
 using System;
@@ -58,6 +59,11 @@ public class LocalDataStore : IDataStore, IDisposable
     private ILiteCollectionAsync<Category> GetCategory()
     {
         return _db.GetCollection<Category>("Categories");
+    }
+
+    private ILiteCollectionAsync<Brand> GetBrand()
+    {
+        return _db.GetCollection<Brand>("Brands");
     }
 
     private ILiteCollectionAsync<Setting> GetSettings()
@@ -303,7 +309,7 @@ public class LocalDataStore : IDataStore, IDisposable
         var model = new Product
         {
             ProductId = productId,
-            BrandName = brandName,
+            BrandName = string.IsNullOrWhiteSpace(brandName) ? brandName : brandName.Trim(),
             Category = category,
             Pack = pack,
             ProductCode = productCode,
@@ -314,6 +320,8 @@ public class LocalDataStore : IDataStore, IDisposable
         };
 
         var result = await collection.InsertAsync(model);
+
+        await AddBrandAsync(brandName);
 
         await AutoCheckpointAsync();
 
@@ -331,7 +339,7 @@ public class LocalDataStore : IDataStore, IDisposable
         }
 
         model.ProductId = productId;
-        model.BrandName = brandName;
+        model.BrandName = string.IsNullOrWhiteSpace(brandName) ? brandName : brandName.Trim();
         model.Category = category;
         model.Pack = pack;
         model.ProductCode = productCode;
@@ -341,6 +349,8 @@ public class LocalDataStore : IDataStore, IDisposable
         model.UnitPrice = unitPrice;
 
         var result = await collection.UpdateAsync(model);
+
+        await AddBrandAsync(brandName);
 
         await AutoCheckpointAsync();
 
@@ -429,6 +439,169 @@ public class LocalDataStore : IDataStore, IDisposable
         await collection.InsertAsync(new Category { Name = name });
 
         return true;
+    }
+
+    public async Task<IReadOnlyList<string>> GetBrandListAsync()
+    {
+        var collection = GetBrand();
+
+        var list = await collection.FindAllAsync();
+
+        return list.Select(x => x.Name).OrderBy(x => x).ToList();
+    }
+
+    public async Task<List<BrandListItem>> GetBrandListItemsAsync()
+    {
+        var brands = await GetBrandListAsync();
+        var products = (await GetProducts().FindAllAsync()).ToList();
+
+        var result = new List<BrandListItem>();
+        foreach (var brandName in brands)
+        {
+            var brandProducts = products
+                .Where(p => BrandNamesEqual(p.BrandName, brandName))
+                .ToList();
+
+            var orderCodes = brandProducts
+                .SelectMany(p => p.OrderMaps ?? [])
+                .Select(m => m.OrderCode)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Count();
+
+            result.Add(new BrandListItem
+            {
+                Name = brandName,
+                ProductCount = brandProducts.Count,
+                OrderCount = orderCodes,
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<bool> AddBrandAsync(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        name = name.Trim();
+        var collection = GetBrand();
+
+        if (await collection.ExistsAsync(x => x.Name.ToLowerInvariant() == name.ToLowerInvariant()))
+            return false;
+
+        await collection.InsertAsync(new Brand { Name = name });
+
+        return true;
+    }
+
+    public async Task MigrateBrandsFromProductsAsync()
+    {
+        var products = await GetProducts().FindAllAsync();
+        var names = products
+            .Select(p => p.BrandName)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(n => n!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n)
+            .ToList();
+
+        foreach (var name in names)
+            await AddBrandAsync(name);
+
+        await AutoCheckpointAsync();
+    }
+
+    public async Task<List<Product>> GetProductsByBrandAsync(string brandName)
+    {
+        if (string.IsNullOrWhiteSpace(brandName))
+            return [];
+
+        var products = await GetProducts().FindAllAsync();
+        return products
+            .Where(p => BrandNamesEqual(p.BrandName, brandName))
+            .OrderBy(p => p.ProductCode)
+            .ThenBy(p => p.Pack)
+            .ToList();
+    }
+
+    private static bool BrandNamesEqual(string? left, string? right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+            return false;
+
+        return string.Equals(left.Trim(), right.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    public async Task<List<BrandOrderLine>> GetOrderMapsByBrandAsync(string brandName)
+    {
+        var products = await GetProductsByBrandAsync(brandName);
+        var lines = new List<BrandOrderLine>();
+
+        foreach (var product in products)
+        {
+            if (product.OrderMaps == null)
+                continue;
+
+            foreach (var map in product.OrderMaps)
+            {
+                lines.Add(new BrandOrderLine
+                {
+                    OrderCode = map.OrderCode,
+                    ProductCode = product.ProductCode,
+                    ProductName = product.ProductName,
+                    TotalCount = map.TotalCount,
+                    UnitPrice = map.UnitPrice,
+                    TotalPrice = map.TotalPrice,
+                    Discount = map.Discount,
+                    SyncedAt = map.SyncedAt,
+                });
+            }
+        }
+
+        return lines
+            .OrderByDescending(x => x.SyncedAt)
+            .ThenBy(x => x.OrderCode)
+            .ThenBy(x => x.ProductCode)
+            .ToList();
+    }
+
+    public async Task<List<OrderProductLine>> GetProductsByOrderNoAsync(string orderNo)
+    {
+        if (string.IsNullOrWhiteSpace(orderNo))
+            return [];
+
+        var products = await GetProducts().FindAllAsync();
+        var lines = new List<OrderProductLine>();
+
+        foreach (var product in products)
+        {
+            if (product.OrderMaps == null)
+                continue;
+
+            var map = product.OrderMaps.FirstOrDefault(m =>
+                string.Equals(m.OrderCode, orderNo, StringComparison.OrdinalIgnoreCase));
+            if (map == null)
+                continue;
+
+            lines.Add(new OrderProductLine
+            {
+                BrandName = product.BrandName,
+                ProductCode = product.ProductCode,
+                ProductName = product.ProductName,
+                ProductModel = product.ProductModel,
+                TotalCount = map.TotalCount,
+                UnitPrice = map.UnitPrice,
+                TotalPrice = map.TotalPrice,
+                Discount = map.Discount,
+            });
+        }
+
+        return lines
+            .OrderBy(x => x.BrandName)
+            .ThenBy(x => x.ProductCode)
+            .ToList();
     }
 
     public async Task BackupAsync()

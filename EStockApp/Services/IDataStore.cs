@@ -1,4 +1,5 @@
 using EStockApp.Data;
+using EStockApp.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,6 +39,14 @@ public interface IDataStore
 
     Task<IReadOnlyList<string>> GetCategoryListAsync();
     Task<bool> AddCategoryAsync(string name);
+
+    Task<IReadOnlyList<string>> GetBrandListAsync();
+    Task<List<BrandListItem>> GetBrandListItemsAsync();
+    Task<bool> AddBrandAsync(string? name);
+    Task MigrateBrandsFromProductsAsync();
+    Task<List<Product>> GetProductsByBrandAsync(string brandName);
+    Task<List<BrandOrderLine>> GetOrderMapsByBrandAsync(string brandName);
+    Task<List<OrderProductLine>> GetProductsByOrderNoAsync(string orderNo);
 
     Task<bool> OrderExistsAsync(string orderId);
 

@@ -111,12 +111,14 @@ public partial class SyncWindowViewModel : ViewModelBase
                 await _dataStore.InsertProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
                 await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalPrice, item.Discount);
                 await _dataStore.AddCategoryAsync(item.Category);
+                await _dataStore.AddBrandAsync(item.BrandName);
             }
             else
             {
                 await _dataStore.UpdateProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
                 await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalPrice, item.Discount);
                 await _dataStore.AddCategoryAsync(item.Category);
+                await _dataStore.AddBrandAsync(item.BrandName);
             }
 
             AddLogs($"订单({orderInfo.OrderNo})更新器件 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");
@@ -147,12 +149,14 @@ public partial class SyncWindowViewModel : ViewModelBase
             await _dataStore.InsertProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
             await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalPrice, item.Discount);
             await _dataStore.AddCategoryAsync(item.Category);
+            await _dataStore.AddBrandAsync(item.BrandName);
         }
         else
         {
             await _dataStore.UpdateProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
             await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalPrice, item.Discount);
             await _dataStore.AddCategoryAsync(item.Category);
+            await _dataStore.AddBrandAsync(item.BrandName);
         }
 
         AddLogs($"订单({item.OrderNumber})更新器件 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");

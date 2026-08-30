@@ -1,0 +1,86 @@
+<UserControl
+    x:Class="EStockApp.Views.BrandListView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ct="clr-namespace:EStockApp.Controls;assembly=EStockApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:EStockApp.ViewModels"
+    Width="560"
+    Height="450"
+    d:DesignHeight="450"
+    d:DesignWidth="560"
+    x:DataType="vm:BrandListViewModel"
+    mc:Ignorable="d">
+    <Design.DataContext>
+        <vm:BrandListViewModel />
+    </Design.DataContext>
+
+    <Grid Margin="10" RowDefinitions="auto,*">
+        <Grid Grid.Row="0">
+            <StackPanel
+                IsEnabled="{Binding !IsBusy}"
+                Orientation="Horizontal"
+                Spacing="10">
+                <TextBox
+                    MinWidth="200"
+                    MaxWidth="400"
+                    Margin="0"
+                    Classes="clearButton"
+                    Text="{Binding Filter, Mode=TwoWay}"
+                    Watermark="输入品牌名称">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <Button
+                    Command="{Binding SearchCommand}"
+                    Content="搜索"
+                    Theme="{DynamicResource SolidButton}" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <DataGrid
+                x:Name="brandDataGrid"
+                BorderThickness="1"
+                CanUserResizeColumns="True"
+                IsReadOnly="True"
+                ItemsSource="{Binding Brands, Mode=OneWay}"
+                SelectionMode="Single">
+                <DataGrid.Columns>
+                    <ct:DataGridTextSelectableColumn
+                        Width="*"
+                        MinWidth="140"
+                        Binding="{Binding Name}"
+                        Header="品牌"
+                        SortMemberPath="Name" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="90"
+                        Binding="{Binding ProductCount}"
+                        Header="产品种数"
+                        SortMemberPath="ProductCount" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="100"
+                        Binding="{Binding OrderCount}"
+                        Header="关联订单"
+                        SortMemberPath="OrderCount" />
+
+                    <DataGridTemplateColumn Width="80" Header="操作">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Classes="Small Secondary"
+                                    Command="{Binding #brandDataGrid.((vm:BrandListViewModel)DataContext).ShowDetailCommand}"
+                                    CommandParameter="{Binding}">
+                                    查看
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Grid>
+</UserControl>

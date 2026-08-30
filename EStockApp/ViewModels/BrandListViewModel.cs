@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EStockApp.Data;
+using EStockApp.Models;
 using EStockApp.Services;
 using EStockApp.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,20 +12,18 @@ using System.Threading.Tasks;
 
 namespace EStockApp.ViewModels;
 
-public partial class OrderListViewModel : DialogViewModelBase
+public partial class BrandListViewModel : DialogViewModelBase
 {
     [ObservableProperty]
-    private ObservableCollection<Order> _orders = new ObservableCollection<Order>();
+    private ObservableCollection<BrandListItem> _brands = new();
 
     [ObservableProperty]
     private string? _filter;
 
-    [ObservableProperty]
-    private decimal? _totalOrderAmount;
-
     private readonly IDataStore _dataStore;
+    private List<BrandListItem> _allBrands = [];
 
-    public OrderListViewModel(IDataStore dataStore)
+    public BrandListViewModel(IDataStore dataStore)
     {
         _dataStore = dataStore;
     }
@@ -33,26 +31,25 @@ public partial class OrderListViewModel : DialogViewModelBase
     public override async Task InitialAsync(Dictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
     {
         await base.InitialAsync(properties, cancellationToken);
-
         await LoadListAsync();
     }
 
     private async Task LoadListAsync()
     {
-        Orders.Clear();
+        _allBrands = await _dataStore.GetBrandListItemsAsync();
+        ApplyFilter();
+    }
 
-        var list = await _dataStore.GetOrderListAsync();
+    private void ApplyFilter()
+    {
+        Brands.Clear();
 
-        TotalOrderAmount = list.Sum(x => x.RealPrice);
-
-
+        IEnumerable<BrandListItem> list = _allBrands;
         if (!string.IsNullOrWhiteSpace(Filter))
-            list = list.Where(x => x.OrderNo.Contains(Filter)).ToList();
+            list = list.Where(x => x.Name.Contains(Filter, System.StringComparison.OrdinalIgnoreCase));
 
         foreach (var item in list)
-        {
-            Orders.Add(item);
-        }
+            Brands.Add(item);
     }
 
     [RelayCommand]
@@ -62,17 +59,17 @@ public partial class OrderListViewModel : DialogViewModelBase
     }
 
     [RelayCommand]
-    private async Task ShowDetailAsync(Order? order)
+    private async Task ShowDetailAsync(BrandListItem? item)
     {
-        if (order == null || string.IsNullOrWhiteSpace(order.OrderNo))
+        if (item == null || string.IsNullOrWhiteSpace(item.Name))
             return;
 
-        var vm = App.ServiceProvider.GetRequiredService<OrderDetailViewModel>();
-        await vm.InitialAsync(new Dictionary<string, object?> { { "orderNo", order.OrderNo } });
+        var vm = App.ServiceProvider.GetRequiredService<BrandDetailViewModel>();
+        await vm.InitialAsync(new Dictionary<string, object?> { { "brandName", item.Name } });
 
-        await DialogHost.ShowDialogAsync(new OrderDetailView(), vm, new DialogOptions()
+        await DialogHost.ShowDialogAsync(new BrandDetailView(), vm, new DialogOptions()
         {
-            Title = $"订单明细：{order.OrderNo}",
+            Title = $"品牌：{item.Name}",
             CanResize = false,
         });
     }

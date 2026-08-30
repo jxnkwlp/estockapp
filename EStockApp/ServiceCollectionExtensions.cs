@@ -19,6 +19,9 @@ public static class ServiceCollectionExtensions
         services.AddTransient<SyncWindow>();
         services.AddTransient<OrderListView>();
         services.AddTransient<RelatedOrdersView>();
+        services.AddTransient<BrandListView>();
+        services.AddTransient<BrandDetailView>();
+        services.AddTransient<OrderDetailView>();
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<SyncWindowViewModel>();
@@ -27,6 +30,9 @@ public static class ServiceCollectionExtensions
         services.AddTransient<StockEditViewModel>();
         services.AddTransient<OrderListViewModel>();
         services.AddTransient<RelatedOrdersViewModel>();
+        services.AddTransient<BrandListViewModel>();
+        services.AddTransient<BrandDetailViewModel>();
+        services.AddTransient<OrderDetailViewModel>();
 
         services.AddSingleton<IRemoteApi, BrowserRemoteApi>();
 

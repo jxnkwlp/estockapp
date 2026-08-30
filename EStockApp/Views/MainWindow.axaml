@@ -74,6 +74,11 @@
                         Command="{Binding ShowOrderListCommand}"
                         Content="订单列表"
                         Theme="{DynamicResource SolidButton}" />
+                    <Button
+                        Classes="Tertiary"
+                        Command="{Binding ShowBrandListCommand}"
+                        Content="品牌列表"
+                        Theme="{DynamicResource SolidButton}" />
                 </StackPanel>
             </Grid>
             <Grid Grid.Column="1">
