@@ -16,8 +16,8 @@
         <vm:OrderListViewModel />
     </Design.DataContext>
 
-    <Grid Margin="10" RowDefinitions="auto,*">
-        <Grid Grid.Row="0">
+    <Grid RowDefinitions="auto,*">
+        <Grid Margin="10">
             <Grid ColumnDefinitions="*,auto">
                 <StackPanel
                     IsEnabled="{Binding !IsBusy}"
@@ -47,65 +47,67 @@
                     <Label Content="{Binding TotalOrderAmount}" />
                 </StackPanel>
             </Grid>
-
         </Grid>
-        <Grid Grid.Row="1">
-            <DataGrid
-                x:Name="myDataGrid"
-                BorderThickness="1"
-                CanUserResizeColumns="True"
-                IsReadOnly="True"
-                ItemsSource="{Binding Orders, Mode=OneWay}"
-                SelectionMode="Single">
-                <DataGrid.Columns>
+        <DataGrid
+            x:Name="myDataGrid"
+            Grid.Row="1"
+            BorderThickness="1"
+            CanUserResizeColumns="True"
+            IsReadOnly="True"
+            ItemsSource="{Binding Orders, Mode=OneWay}"
+            SelectionMode="Single">
+            <DataGrid.Columns>
 
-                    <ct:DataGridTextSelectableColumn
-                        Width="160"
-                        Binding="{Binding OrderNo}"
-                        Header="编号"
-                        SortMemberPath="OrderNo" />
+                <ct:DataGridTextSelectableColumn
+                    Width="*"
+                    MinWidth="140"
+                    Binding="{Binding OrderNo}"
+                    Header="编号"
+                    SortMemberPath="OrderNo" />
 
-                    <ct:DataGridTextSelectableColumn
-                        Width="100"
-                        Binding="{Binding RealPrice}"
-                        Header="实付金额"
-                        SortMemberPath="RealPrice" />
+                <ct:DataGridTextSelectableColumn
+                    Width="100"
+                    Binding="{Binding RealPrice, StringFormat={}{0:0.00}}"
+                    Header="实付金额"
+                    SortMemberPath="RealPrice"
+                    TextAlignment="Right" />
 
-                    <ct:DataGridTextSelectableColumn
-                        Width="100"
-                        Binding="{Binding TotalDiscount}"
-                        Header="折扣金额"
-                        SortMemberPath="TotalDiscount" />
+                <ct:DataGridTextSelectableColumn
+                    Width="100"
+                    Binding="{Binding TotalDiscount, StringFormat={}{0:0.00}}"
+                    Header="折扣金额"
+                    SortMemberPath="TotalDiscount"
+                    TextAlignment="Right" />
 
-                    <ct:DataGridTextSelectableColumn
-                        Width="100"
-                        Binding="{Binding ItemsCount}"
-                        Header="数量"
-                        SortMemberPath="ItemsCount" />
+                <ct:DataGridTextSelectableColumn
+                    Width="70"
+                    Binding="{Binding ItemsCount}"
+                    Header="数量"
+                    SortMemberPath="ItemsCount"
+                    TextAlignment="Right" />
 
-                    <ct:DataGridTextSelectableColumn
-                        Width="150"
-                        Binding="{Binding OrderTime}"
-                        Header="时间"
-                        SortMemberPath="OrderTime" />
+                <ct:DataGridTextSelectableColumn
+                    Width="170"
+                    MinWidth="170"
+                    Binding="{Binding OrderTime, Mode=OneWay, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
+                    Header="时间"
+                    SortMemberPath="OrderTime" />
 
-                    <DataGridTemplateColumn Width="80" Header="操作">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button
-                                    Classes="Small Secondary"
-                                    Command="{Binding #myDataGrid.((vm:OrderListViewModel)DataContext).ShowDetailCommand}"
-                                    CommandParameter="{Binding}">
-                                    明细
-                                </Button>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+                <DataGridTemplateColumn Width="80" Header="操作">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button
+                                Classes="Small Secondary"
+                                Command="{Binding #myDataGrid.((vm:OrderListViewModel)DataContext).ShowDetailCommand}"
+                                CommandParameter="{Binding}">
+                                明细
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
-                </DataGrid.Columns>
-            </DataGrid>
-
-        </Grid>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 
 

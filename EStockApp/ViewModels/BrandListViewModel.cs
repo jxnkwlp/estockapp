@@ -70,7 +70,6 @@ public partial class BrandListViewModel : DialogViewModelBase
         await DialogHost.ShowDialogAsync(new BrandDetailView(), vm, new DialogOptions()
         {
             Title = $"品牌：{item.Name}",
-            CanResize = false,
         });
     }
 }

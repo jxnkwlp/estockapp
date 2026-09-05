@@ -490,7 +490,6 @@ public partial class MainWindowViewModel : ViewModelBase
         await DialogHost.ShowDialogAsync(new RelatedOrdersView(), vm, new DialogOptions()
         {
             Title = "相关订单",
-            CanResize = false,
         });
     }
 
@@ -540,7 +539,6 @@ public partial class MainWindowViewModel : ViewModelBase
         await DialogHost.ShowDialogAsync(new OrderListView(), vm, new DialogOptions()
         {
             Title = "订单列表",
-            CanResize = false,
         });
 
         await LoadList();
@@ -556,7 +554,6 @@ public partial class MainWindowViewModel : ViewModelBase
         await DialogHost.ShowDialogAsync(new BrandListView(), vm, new DialogOptions()
         {
             Title = "品牌列表",
-            CanResize = false,
         });
     }
 
@@ -572,7 +569,6 @@ public partial class MainWindowViewModel : ViewModelBase
         await DialogHost.ShowDialogAsync(new BrandDetailView(), vm, new DialogOptions()
         {
             Title = $"品牌：{brandName}",
-            CanResize = false,
         });
     }
 

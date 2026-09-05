@@ -6,73 +6,75 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:EStockApp.ViewModels"
-    Width="860"
+    Width="900"
     Height="420"
     d:DesignHeight="420"
-    d:DesignWidth="860"
+    d:DesignWidth="900"
     x:DataType="vm:OrderDetailViewModel"
     mc:Ignorable="d">
     <Design.DataContext>
         <vm:OrderDetailViewModel />
     </Design.DataContext>
 
-    <Grid Margin="10">
-        <DataGrid
-            BorderThickness="1"
-            CanUserResizeColumns="True"
-            IsReadOnly="True"
-            ItemsSource="{Binding Items, Mode=OneWay}"
-            SelectionMode="Single">
-            <DataGrid.Columns>
-                <ct:DataGridTextSelectableColumn
-                    Width="120"
-                    Binding="{Binding BrandName}"
-                    Header="品牌"
-                    SortMemberPath="BrandName" />
+    <DataGrid
+        BorderThickness="1"
+        CanUserResizeColumns="True"
+        IsReadOnly="True"
+        ItemsSource="{Binding Items, Mode=OneWay}"
+        SelectionMode="Single">
+        <DataGrid.Columns>
+            <ct:DataGridTextSelectableColumn
+                Width="120"
+                Binding="{Binding BrandName}"
+                Header="品牌"
+                SortMemberPath="BrandName" />
 
-                <ct:DataGridTextSelectableColumn
-                    Width="110"
-                    Binding="{Binding ProductCode}"
-                    Header="编号"
-                    SortMemberPath="ProductCode" />
+            <ct:DataGridTextSelectableColumn
+                Width="110"
+                Binding="{Binding ProductCode}"
+                Header="编号"
+                SortMemberPath="ProductCode" />
 
-                <ct:DataGridTextSelectableColumn
-                    Width="*"
-                    MinWidth="160"
-                    Binding="{Binding ProductName}"
-                    Header="名称"
-                    SortMemberPath="ProductName" />
+            <ct:DataGridTextSelectableColumn
+                Width="*"
+                MinWidth="160"
+                Binding="{Binding ProductName}"
+                Header="名称"
+                SortMemberPath="ProductName" />
 
-                <ct:DataGridTextSelectableColumn
-                    Width="120"
-                    Binding="{Binding ProductModel}"
-                    Header="型号"
-                    SortMemberPath="ProductModel" />
+            <ct:DataGridTextSelectableColumn
+                Width="120"
+                Binding="{Binding ProductModel}"
+                Header="型号"
+                SortMemberPath="ProductModel" />
 
-                <ct:DataGridTextSelectableColumn
-                    Width="70"
-                    Binding="{Binding TotalCount}"
-                    Header="数量"
-                    SortMemberPath="TotalCount" />
+            <ct:DataGridTextSelectableColumn
+                Width="70"
+                Binding="{Binding TotalCount}"
+                Header="数量"
+                SortMemberPath="TotalCount"
+                TextAlignment="Right" />
 
-                <ct:DataGridTextSelectableColumn
-                    Width="80"
-                    Binding="{Binding UnitPrice}"
-                    Header="单价"
-                    SortMemberPath="UnitPrice" />
+            <ct:DataGridTextSelectableColumn
+                Width="110"
+                Binding="{Binding UnitPrice, StringFormat={}{0:0.000000}}"
+                Header="单价"
+                SortMemberPath="UnitPrice"
+                TextAlignment="Right" />
 
-                <ct:DataGridTextSelectableColumn
-                    Width="80"
-                    Binding="{Binding TotalPrice}"
-                    Header="价格"
-                    SortMemberPath="TotalPrice" />
+            <ct:DataGridTextSelectableColumn
+                Width="110"
+                Binding="{Binding TotalPrice, StringFormat={}{0:0.000000}}"
+                Header="价格"
+                SortMemberPath="TotalPrice"
+                TextAlignment="Right" />
 
-                <ct:DataGridTextSelectableColumn
-                    Width="80"
-                    Binding="{Binding Discount}"
-                    Header="优惠"
-                    SortMemberPath="Discount" />
-            </DataGrid.Columns>
-        </DataGrid>
-    </Grid>
+            <ct:DataGridTextSelectableColumn
+                Width="110"
+                Binding="{Binding Discount, StringFormat={}{0:0.000000}}"
+                Header="优惠"
+                SortMemberPath="Discount"
+                TextAlignment="Right" />
+        </DataGrid.Columns>
+    </DataGrid>
 </UserControl>

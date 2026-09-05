@@ -1,12 +1,15 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 
 namespace EStockApp.Controls;
 
 public class DataGridTextSelectableColumn : DataGridTextColumn
 {
+    public TextAlignment TextAlignment { get; set; } = TextAlignment.Left;
+
     protected override Control GenerateElement(DataGridCell cell, object dataItem)
     {
         var root = new Border()
@@ -21,6 +24,8 @@ public class DataGridTextSelectableColumn : DataGridTextColumn
         {
             Name = "CellTextBlock",
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            TextAlignment = TextAlignment,
         };
 
         root.Child = textBlock;

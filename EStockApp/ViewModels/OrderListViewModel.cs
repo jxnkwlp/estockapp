@@ -73,7 +73,6 @@ public partial class OrderListViewModel : DialogViewModelBase
         await DialogHost.ShowDialogAsync(new OrderDetailView(), vm, new DialogOptions()
         {
             Title = $"订单明细：{order.OrderNo}",
-            CanResize = false,
         });
     }
 }
