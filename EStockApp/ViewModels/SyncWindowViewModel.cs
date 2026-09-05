@@ -18,7 +18,10 @@ public partial class SyncWindowViewModel : ViewModelBase
     private DateTimeOffset? _startDate = DateTimeOffset.Now.AddMonths(-2);
 
     [ObservableProperty]
-    private ObservableCollection<string> _logs = [];
+    private ObservableCollection<SyncRecordLine> _records = [];
+
+    [ObservableProperty]
+    private string _statusText = string.Empty;
 
     [ObservableProperty]
     private bool _loadFromOrder = true;
@@ -35,57 +38,61 @@ public partial class SyncWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanStart), AllowConcurrentExecutions = false)]
     private async Task StartAsync()
     {
-        IsBusy = true;
-
         if (!StartDate.HasValue)
             return;
 
-        AddLogs("正在初始化...");
+        IsBusy = true;
+        Records.Clear();
+        SetStatus("正在初始化...");
 
         try
         {
             if (LoadFromOrder)
             {
                 int count = 0;
+                SetStatus("读取数据中...");
                 var result = _remoteApi.GetOrdersAsync(DateOnly.FromDateTime(StartDate.Value.Date));
 
                 await foreach (var item in result)
                 {
                     if (!string.IsNullOrWhiteSpace(item.Error))
-                        AddLogs(item.Error);
+                        SetStatus(item.Error);
                     else if (item.Result != null)
                     {
+                        SetStatus($"正在同步订单 {item.Result.OrderNo}");
                         await AddOrUpdateOrderAndItemsAsync(item.Result);
                         count++;
                     }
                 }
 
-                AddLogs($"已同步 {count} 个订单");
+                SetStatus($"已同步 {count} 个订单");
             }
             else
             {
+                SetStatus("读取数据中...");
                 var result = _remoteApi.GetHistoriesAsync(DateOnly.FromDateTime(StartDate.Value.Date));
                 int count = 0;
 
                 await foreach (var item in result)
                 {
                     if (!string.IsNullOrWhiteSpace(item.Error))
-                        AddLogs(item.Error);
+                        SetStatus(item.Error);
                     else if (item.Result != null)
                     {
+                        SetStatus($"正在同步订单 {item.Result.OrderNumber}");
                         await AddOrUpdateProductAsync(item.Result);
                         count++;
                     }
                 }
 
-                AddLogs($"已更新 {count} 个器件");
+                SetStatus($"已更新 {count} 个器件");
             }
 
-            AddLogs("同步完成！");
+            SetStatus("同步完成");
         }
         catch (Exception ex)
         {
-            AddLogs(ex.Message);
+            SetStatus(ex.Message);
         }
 
         IsBusy = false;
@@ -96,17 +103,13 @@ public partial class SyncWindowViewModel : ViewModelBase
         if (!await _dataStore.OrderExistsAsync(orderInfo.OrderId))
         {
             await _dataStore.InsertOrderAsync(orderInfo.OrderId, orderInfo.OrderNo, orderInfo.TotalPrice, orderInfo.TotalDiscount, orderInfo.RealPrice, orderInfo.OrderTime, orderInfo.ItemsCount);
-
-            AddLogs($"新增订单 {orderInfo.OrderNo}");
-        }
-        else
-        {
-            AddLogs($"订单 {orderInfo.OrderNo} 已存在");
         }
 
         foreach (var item in orderInfo.Products)
         {
-            if (!await _dataStore.IsProductExistsAsync(item.ProductId))
+            var isNewProduct = !await _dataStore.IsProductExistsAsync(item.ProductId);
+
+            if (isNewProduct)
             {
                 await _dataStore.InsertProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
                 await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalPrice, item.Discount);
@@ -121,7 +124,15 @@ public partial class SyncWindowViewModel : ViewModelBase
                 await _dataStore.AddBrandAsync(item.BrandName);
             }
 
-            AddLogs($"订单({orderInfo.OrderNo})更新器件 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");
+            AddRecord(new SyncRecordLine
+            {
+                ActionText = isNewProduct ? "新增" : "更新",
+                OrderNo = orderInfo.OrderNo,
+                ProductCode = item.ProductCode,
+                ProductName = item.ProductName,
+                Quantity = item.TotalCount,
+                SyncedAt = DateTime.Now
+            });
         }
     }
 
@@ -136,15 +147,11 @@ public partial class SyncWindowViewModel : ViewModelBase
                 return;
 
             await _dataStore.InsertOrderAsync(orderInfo.OrderId, orderInfo.OrderNo, orderInfo.TotalPrice, orderInfo.TotalDiscount, orderInfo.RealPrice, orderInfo.OrderTime, orderInfo.ItemsCount);
-
-            AddLogs($"新增订单 {orderInfo.OrderNo}");
-        }
-        else
-        {
-            AddLogs($"订单 {orderId} 已存在");
         }
 
-        if (!await _dataStore.IsProductExistsAsync(item.ProductId))
+        var isNewProduct = !await _dataStore.IsProductExistsAsync(item.ProductId);
+
+        if (isNewProduct)
         {
             await _dataStore.InsertProductAsync(item.ProductId, item.Category, item.ProductCode, item.ProductName, item.ProductModel, item.BrandName, item.Pack, item.StockUnitName, item.Price);
             await _dataStore.AddProductOrderMapAsync(item.ProductId, item.OrderNumber, item.Price, item.TotalCount, item.TotalPrice, item.Discount);
@@ -159,7 +166,15 @@ public partial class SyncWindowViewModel : ViewModelBase
             await _dataStore.AddBrandAsync(item.BrandName);
         }
 
-        AddLogs($"订单({item.OrderNumber})更新器件 {item.ProductCode}: {item.ProductName}，共{item.TotalCount}{item.StockUnitName}");
+        AddRecord(new SyncRecordLine
+        {
+            ActionText = isNewProduct ? "新增" : "更新",
+            OrderNo = item.OrderNumber,
+            ProductCode = item.ProductCode,
+            ProductName = item.ProductName,
+            Quantity = item.TotalCount,
+            SyncedAt = DateTime.Now
+        });
     }
 
     private bool CanStart()
@@ -167,8 +182,13 @@ public partial class SyncWindowViewModel : ViewModelBase
         return StartDate.HasValue && StartDate.Value.Date <= DateTimeOffset.Now.Date;
     }
 
-    private void AddLogs(string text)
+    private void SetStatus(string text)
     {
-        Logs.Insert(0, $"[{DateTime.Now}] {text}");
+        StatusText = text;
+    }
+
+    private void AddRecord(SyncRecordLine line)
+    {
+        Records.Add(line);
     }
 }

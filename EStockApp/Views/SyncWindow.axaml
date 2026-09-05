@@ -2,23 +2,24 @@
     x:Class="EStockApp.SyncWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ct="clr-namespace:EStockApp.Controls;assembly=EStockApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:sys="using:system"
     xmlns:vm="using:EStockApp.ViewModels"
     Title="同步"
-    Width="600"
-    Height="380"
+    Width="860"
+    Height="480"
     x:CompileBindings="True"
     x:DataType="vm:SyncWindowViewModel"
-    CanResize="False"
+    CanResize="True"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
     <Design.DataContext>
         <vm:SyncWindowViewModel />
     </Design.DataContext>
 
-    <Grid Margin="10" RowDefinitions="auto,*">
+    <Grid Margin="10" RowDefinitions="auto,*,auto">
         <Grid>
             <StackPanel Orientation="Horizontal" Spacing="10">
                 <TextBlock VerticalAlignment="Center">开始日期</TextBlock>
@@ -32,26 +33,64 @@
                     Content="从订单同步"
                     IsChecked="{Binding LoadFromOrder, Mode=TwoWay}"
                     IsEnabled="{Binding !IsBusy}" />-->
-                <Button Command="{Binding StartCommand}" Theme="{DynamicResource SolidButton}">开始同步</Button>
+                <Button
+                    Command="{Binding StartCommand}"
+                    IsEnabled="{Binding !IsBusy}"
+                    Theme="{DynamicResource SolidButton}">开始同步</Button>
             </StackPanel>
         </Grid>
         <Grid Grid.Row="1" Margin="0,10,0,0">
-            <ListBox
-                AutoScrollToSelectedItem="False"
-                ItemsSource="{Binding Logs}"
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <SelectableTextBlock
-                            Margin="0"
-                            Padding="0,0"
-                            FontSize="12"
-                            Text="{Binding .}"
-                            TextWrapping="Wrap" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <DataGrid
+                x:Name="SyncRecordsGrid"
+                BorderThickness="1"
+                CanUserResizeColumns="True"
+                IsReadOnly="True"
+                ItemsSource="{Binding Records, Mode=OneWay}"
+                SelectionMode="Single">
+                <DataGrid.Columns>
+                    <ct:DataGridTextSelectableColumn
+                        Width="70"
+                        Binding="{Binding ActionText}"
+                        Header="动作"
+                        SortMemberPath="ActionText" />
 
+                    <ct:DataGridTextSelectableColumn
+                        Width="130"
+                        Binding="{Binding OrderNo}"
+                        Header="订单号"
+                        SortMemberPath="OrderNo" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="110"
+                        Binding="{Binding ProductCode}"
+                        Header="产品编号"
+                        SortMemberPath="ProductCode" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="*"
+                        MinWidth="160"
+                        Binding="{Binding ProductName}"
+                        Header="产品名称"
+                        SortMemberPath="ProductName" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="80"
+                        Binding="{Binding Quantity}"
+                        Header="数量"
+                        SortMemberPath="Quantity" />
+
+                    <ct:DataGridTextSelectableColumn
+                        Width="150"
+                        Binding="{Binding SyncedAt}"
+                        Header="时间"
+                        SortMemberPath="SyncedAt" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <TextBlock
+                VerticalAlignment="Center"
+                Text="{Binding StatusText}" />
         </Grid>
     </Grid>
 </Window>
