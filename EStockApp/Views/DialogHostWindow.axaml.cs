@@ -5,14 +5,19 @@ namespace EStockApp;
 
 public partial class DialogHostWindow : Window
 {
-    public DialogHostWindow(UserControl view, ViewModelBase vm)
+    public DialogHostWindow()
     {
         InitializeComponent();
+    }
+
+    public DialogHostWindow(UserControl view, ViewModelBase vm)
+        : this()
+    {
         DataContext = this;
         View = view;
         View.DataContext = vm;
-        Content.Content = View;
+        Host.Content = View;
     }
 
-    public UserControl View { get; }
+    public UserControl? View { get; }
 }
